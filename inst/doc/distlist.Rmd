@@ -1,0 +1,131 @@
+---
+title: "List of distributions"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{distlist}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Continuous distributions
+
+* [`bccg(mu, sigma, nu)`](../reference/bccg.html): Box-Cox Cole and Green distribution parameterised by location `mu`, scale `sigma`, and skewness `nu`
+
+* [`bcpe(mu, sigma, nu, tau)`](../reference/bcpe.html): Box-Cox power exponential distribution parameterised by location `mu`, scale `sigma`, `nu`, and `tau`
+
+* [`bct(mu, sigma, nu, tau)`](../reference/bct.html): Box-Cox t-distribution parameterised by location `mu`, scale `sigma`, skewness `nu`, and degrees of freedom `tau`
+
+* [`beta2(mu, phi)`](../reference/beta2.html): Beta distribution reparameterised by mean `mu` and precision `phi`
+
+* [`exgauss(mu, sigma, lambda)`](../reference/exgauss.html): Exponentially modified Gaussian distribution parameterised by location `mu`, scale `sigma` and rate `lambda`
+
+* [`foldnorm(mu, sigma)`](../reference/foldnorm.html): Folded normal distribution parameterised by location `mu` and scale `sigma`
+
+* [`gamma2(mean, sd)`](../reference/gamma2.html): Gamma distribution reparameterised by mean and standard deviation
+
+* [`gumbel(location, scale)`](../reference/gumbel.html): Gumbel distribution parameterised by location and scale
+
+* [`invgauss(mean, shape)`](../reference/invgauss.html): Inverse Gaussian distribution parameterised by mean and shape
+
+* [`laplace(mu, b)`](../reference/laplace.html): Laplace distribution parameterised by location `mu` and scale `b`
+
+* [`oibeta(shape1, shape2, oneprob)`](../reference/oibeta.html): One-inflated beta distribution parameterised by shape parameters `shape1`, `shape2` and one-probability `oneprob`
+
+* [`oibeta2(mu, phi, oneprob)`](../reference/oibeta2.html): One-inflated beta distribution reparameterised by mean `mu`, precision `phi`, and one-probability `oneprob`
+
+* [`pareto(mu)`](../reference/pareto.html): Pareto distribution parameterised by `mu`
+
+* [`powerexp(mu, sigma, nu)`](../reference/pe.html): Power exponential distribution parameterised by mean `mu`, standard deviation `sigma` and shape `nu`
+
+* [`powerexp2(mu, sigma, nu)`](../reference/pe2.html): Power exponential distribution reparameterised by location `mu`, scale `sigma` and shape `nu`
+
+* [`skewnorm(xi, omega, alpha)`](../reference/skewnorm.html): Skew normal distribution parameterised by location `xi`, scale `omega` and skewness `alpha`
+
+* [`skewnorm2(mean, sd, alpha)`](../reference/skewnorm2.html): Skew normal distribution reparameterised by mean, standard deviation and skewness `alpha`
+
+* [`skewt(mu, sigma, skew, df)`](../reference/skewt.html): Skew t-distribution parameterised by location `mu`, scale `sigma`, skewness `skew` and degrees of freedom `df`
+
+* [`truncnorm(mean, sd, min, max)`](../reference/truncnorm.html): Truncated normal distribution parameterised by mean, standard deviation, lower bound `min` and upper bound `max`
+
+* [`trunct(df, min, max)`](../reference/trunct.html): Truncated t-distribution parameterised by degrees of freedom `df`, lower bound `min` and upper bound `max`
+
+* [`trunct2(df, mu, sigma, min, max)`](../reference/trunct.html): Truncated t-distribution parameterised location `mu`, scale `sigma`, degrees of freedom `df`, lower bound `min` and upper bound `max`
+
+* [`t2(mu, sigma, df)`](../reference/t2.html): Non-central and scaled t-distribution parameterised by location `mu`, scale `sigma` and degrees of freedom `df`
+
+* [`vm(mu, kappa)`](../reference/vm.html): Von Mises distribution parameterised by mean direction `mu` and concentration `kappa`
+
+* [`wrpcauchy(mu, rho)`](../reference/wrpcauchy.html): Wrapped Cauchy distribution parameterised by mean direction `mu` and concentration `rho`
+
+* [`zibeta(shape1, shape2, zeroprob)`](../reference/zibeta.html): Zero-inflated beta distribution parameterised by shape parameters `shape1`, `shape2` and zero-probability `zeroprob`
+
+* [`zibeta2(mu, phi, zeroprob)`](../reference/zibeta2.html): Zero-inflated beta distribution reparameterised by mean `mu`, precision `phi`, and zero-probability `zeroprob`
+
+* [`zigamma(shape, scale, zeroprob)`](../reference/zigamma.html): Zero-inflated gamma distribution parameterised by shape and scale, with a zero-probability `zeroprob`
+
+* [`zigamma2(mean, sd, zeroprob)`](../reference/zigamma2.html): Zero-inflated gamma distribution reparameterised by mean, standard deviation and zero-probability `zeroprob`
+
+* [`ziinvgauss(mean, shape, zeroprob)`](../reference/ziinvgauss.html): Zero-inflated inverse Gaussian distribution parameterised by mean, shape and zero-probability `zeroprob`
+
+* [`zilnorm(meanlog, sdlog, zeroprob)`](../reference/zilnorm.html): Zero-inflated log normal distribution parameterised by meanlog, sdlog and zero-probability `zeroprob`
+
+* [`zoibeta(shape1, shape2, zeroprob, oneprob)`](../reference/zoibeta.html): Zero- and one-inflated beta distribution parameterised by shape parameters `shape1`, `shape2`, zero-probability `zeroprob` and one-probability `oneprob`
+
+* [`zoibeta2(mu, phi, zeroprob, oneprob)`](../reference/zoibeta2.html): Zero- and one-inflated beta distribution reparameterised by mean `mu`, precision `phi`, zero-probability `zeroprob` and one-probability `oneprob`
+
+
+## Discrete distributions
+
+* [`betabinom(size, shape1, shape2)`](../reference/betabinom.html): Beta-binomial distribution parameterised by size `size`, shape parameters `shape1` and `shape2`
+
+* [`genpois(lambda, phi)`](../reference/genpois.html): Generalised Poisson distribution parameterised by mean `lambda` and dispersion `phi`
+
+* [`nbinom2(mu, size)`](../reference/nbinom2.html): Negative binomial distribution reparameterised by mean `mu` and size `size`
+
+* [`zibinom(size, prob, zeroprob)`](../reference/zibinom.html): Zero-inflated binomial distribution parameterised by size `size`, success probability `prob` and zero-probability `zeroprob`
+
+* [`zinbinom(size, prob, zeroprob)`](../reference/zinbinom.html): Zero-inflated negative binomial distribution parameterised by size `size`, success probability `prob` and zero-probability `zeroprob`
+
+* [`zinbinom2(mu, size, zeroprob)`](../reference/zinbinom2.html): Zero-inflated negative binomial distribution reparameterised by mean `mu`, size `size` and zero-probability `zeroprob`
+
+* [`zipois(lambda, zeroprob)`](../reference/zipois.html): Zero-inflated Poisson distribution parameterised by rate `lambda` and zero-probability `zeroprob`
+
+* [`ztbinom(size, prob)`](../reference/ztbinom.html): Zero-truncated binomial distribution parameterised by size `size` and success probability `prob`
+
+* [`ztnbinom(size, prob)`](../reference/ztnbinom.html): Zero-truncated negative binomial distribution parameterised by size `size` and success probability `prob`
+
+* [`ztnbinom2(mu, size)`](../reference/ztnbinom2.html): Zero-truncated negative binomial distribution reparameterised by mean `mu` and size `size`
+
+* [`ztpois(lambda)`](../reference/ztpois.html): Zero-truncated Poisson distribution parameterised by rate `lambda`
+
+
+## Multivariate distributions
+
+* [`dirichlet(alpha)`](../reference/dirichlet.html): Dirichlet distribution parameterised by concentration parameter vector `alpha`
+
+* [`dirmult(size, alpha)`](../reference/dirmult.html): Dirichlet-multinomial distribution parameterised by `size` and concentration parameters `alpha`
+
+* [`mvt(mu, Sigma, df)`](../reference/mvt.html): Multivariate t-distribution parameterised by location `mu`, scale matrix `Sigma` and degrees of freedom `df`
+
+* [`vmf(mu, kappa)`](../reference/vmf.html): Multivariate von Mises-Fisher distribution parameterised by unit mean vector `mu` and concentration `kappa`
+
+* [`vmf2(theta)`](../reference/vmf2.html): Multivariate von Mises-Fisher distribution parameterised by parameter `theta` equal to unit mean vector `mu` times concentration scalar `kappa`
+
+
+## Copulas
+
+Bivariate copulas can be implemented in a modular way using the [`dcopula`](../reference/dcopula.html) function together with one of the copula constructors below. Available copula constructors are:
+
+* [`cgaussian(rho)`](../reference/cgaussian.html) (Gaussian copula)
+* [`cclayton(theta)`](../reference/cclayton.html) (Clayton copula)
+* [`cgumbel(theta)`](../reference/cgumbel.html) (Gumbel copula)
+* [`cfrank(theta)`](../reference/cfrank.html) (Frank copula)
+
+
