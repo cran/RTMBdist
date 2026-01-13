@@ -5,8 +5,14 @@
 
 <!-- badges: start -->
 
-[![Lifecycle:
-experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental) -->
+
+[![CRAN
+status](https://www.r-pkg.org/badges/version/RTMBdist)](https://CRAN.R-project.org/package=RTMBdist)
+[![metacran
+downloads](https://cranlogs.r-pkg.org/badges/last-month/RTMBdist)](https://cran.r-project.org/package=RTMBdist)
+[![total
+downloads](https://cranlogs.r-pkg.org:443/badges/grand-total/RTMBdist)](https://cranlogs.r-pkg.org:443/badges/grand-total/RTMBdist)
 [![R-CMD-check](https://github.com/janoleko/RTMBdist/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/janoleko/RTMBdist/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
@@ -27,12 +33,20 @@ vignette. There are also a couple of [Worked
 examples](https://janoleko.github.io/RTMBdist/articles/Examples.html)
 demonstrating how to use `RTMBdist` in practice.
 
-Feel free to contribute!
+Feel free to contribute or open an issue if you are missing a
+distribution!
 
 ## Installation
 
-You can install the development version of `RTMBdist` from
-[GitHub](https://github.com/) with:
+You can install the released version from
+[CRAN](https://CRAN.R-project.org/package=RTMBdist) with:
+
+``` r
+install.packages("RTMBdist")
+```
+
+or the development version from
+[GitHub](https://github.com/janoleko/RTMBdist) with:
 
 ``` r
 remotes::install_github("janoleko/RTMBdist")

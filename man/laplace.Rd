@@ -8,7 +8,7 @@
 \alias{rlaplace}
 \title{Laplace distribution}
 \usage{
-dlaplace(x, mu = 0, b = 1, log = FALSE)
+dlaplace(x, mu = 0, b = 1, eps = NULL, log = FALSE)
 
 plaplace(q, mu = 0, b = 1, lower.tail = TRUE, log.p = FALSE)
 
@@ -22,6 +22,9 @@ rlaplace(n, mu = 0, b = 1)
 \item{mu}{location parameter}
 
 \item{b}{scale parameter, must be positive.}
+
+\item{eps}{optional smoothing parameter for \code{dlaplace} to smooth the absolute value function. See \code{\link{abs_smooth}} for details.
+It is recommended to set this to a small constant like \code{1e-6} for numerical optimisation.}
 
 \item{log, log.p}{logical; if \code{TRUE}, probabilities/ densities \eqn{p} are returned as \eqn{\log(p)}.}
 

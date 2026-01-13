@@ -42,15 +42,19 @@ knitr::opts_chunk$set(
 
 * [`pareto(mu)`](../reference/pareto.html): Pareto distribution parameterised by `mu`
 
-* [`powerexp(mu, sigma, nu)`](../reference/pe.html): Power exponential distribution parameterised by mean `mu`, standard deviation `sigma` and shape `nu`
+* [`powerexp(mu, sigma, nu)`](../reference/powerexp.html): Power exponential distribution parameterised by mean `mu`, standard deviation `sigma` and shape `nu`
 
-* [`powerexp2(mu, sigma, nu)`](../reference/pe2.html): Power exponential distribution reparameterised by location `mu`, scale `sigma` and shape `nu`
+* [`powerexp2(mu, sigma, nu)`](../reference/powerexp.html): Power exponential distribution reparameterised by location `mu`, scale `sigma` and shape `nu`
+
+* [`pgweibull(scale, shape, powershape)`](../reference/pgweibull.html): Power generalised Weibull distribution parameterised by `scale`, `shape` and `powershape`
 
 * [`skewnorm(xi, omega, alpha)`](../reference/skewnorm.html): Skew normal distribution parameterised by location `xi`, scale `omega` and skewness `alpha`
 
 * [`skewnorm2(mean, sd, alpha)`](../reference/skewnorm2.html): Skew normal distribution reparameterised by mean, standard deviation and skewness `alpha`
 
 * [`skewt(mu, sigma, skew, df)`](../reference/skewt.html): Skew t-distribution parameterised by location `mu`, scale `sigma`, skewness `skew` and degrees of freedom `df`
+
+* [`skewt2(mean, sd, skew, df)`](../reference/skewt2.html): Skew t-distribution reparameterised by mean, standard deviation, skewness `skew` and degrees of freedom `df`
 
 * [`truncnorm(mean, sd, min, max)`](../reference/truncnorm.html): Truncated normal distribution parameterised by mean, standard deviation, lower bound `min` and upper bound `max`
 
@@ -118,6 +122,8 @@ knitr::opts_chunk$set(
 
 * [`vmf2(theta)`](../reference/vmf2.html): Multivariate von Mises-Fisher distribution parameterised by parameter `theta` equal to unit mean vector `mu` times concentration scalar `kappa`
 
+* [`wishart(nu, Sigma)`](../reference/wishart.html): Wishart distribution parameterised by degrees of freedom `nu` and scale matrix `Sigma`
+
 
 ## Copulas
 
@@ -127,5 +133,18 @@ Bivariate copulas can be implemented in a modular way using the [`dcopula`](../r
 * [`cclayton(theta)`](../reference/cclayton.html) (Clayton copula)
 * [`cgumbel(theta)`](../reference/cgumbel.html) (Gumbel copula)
 * [`cfrank(theta)`](../reference/cfrank.html) (Frank copula)
+
+For bivariate copulas with *discrete* margins, use the [`ddcopula`](../reference/ddcopula.html) function instead. In this case, instead of copula *densities*, copula *CDFs* are needed. The available constructors for this are:
+
+* [`Cclayton`](../reference/Cclayton.html) (Clayton copula CDF)
+* [`Cgumbel`](../reference/Cgumbel.html) (Gumbel copula CDF)
+* [`Cfrank`](../reference/Cfrank.html) (Frank copula CDF)
+
+Multivariate copulas are also possible using the [`dmvcopula`](../reference/dmvcopula.html) function together with one of the multivariate copula constructors below. Currently, only the multivariate Gaussian copula is implemented in two ways:
+
+* [`cmvgauss(R)`](../reference/cmvgauss.html) (multivariate Gaussian copula parameterised by a correlation matrix)
+* [`cgmrf(Q)`](../reference/cgmrf.html) (multivariate Gaussian copula parameterised by an inverse correlation matrix)
+
+
 
 

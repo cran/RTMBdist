@@ -13,6 +13,8 @@
 #' @param b scale parameter, must be positive.
 #' @param log,log.p logical; if \code{TRUE}, probabilities/ densities \eqn{p} are returned as \eqn{\log(p)}.
 #' @param lower.tail logical; if \code{TRUE}, probabilities are \eqn{P[X \le x]}, otherwise, \eqn{P[X > x]}.
+#' @param eps optional smoothing parameter for \code{dlaplace} to smooth the absolute value function. See \code{\link{abs_smooth}} for details.
+#' It is recommended to set this to a small constant like \code{1e-6} for numerical optimisation.
 #'
 #' @return
 #' \code{dlaplace} gives the density, \code{plaplace} gives the distribution function, \code{qlaplace} gives the quantile function, and \code{rlaplace} generates random deviates.
@@ -28,13 +30,13 @@ NULL
 #' @rdname laplace
 #' @export
 #' @import RTMB
-dlaplace <- function(x, mu = 0, b = 1, log = FALSE) {
+dlaplace <- function(x, mu = 0, b = 1, eps = NULL, log = FALSE) {
 
   if (!ad_context()) {
     args <- as.list(environment())
     simulation_check(args) # informative error message if likelihood in wrong order
     # ensure b > 0
-    if (b <= 0) stop("b must be strictly positive.")
+    if (!all(b > 0)) stop("b must be strictly positive.")
   }
 
   # potentially escape to RNG or CDF
@@ -45,7 +47,12 @@ dlaplace <- function(x, mu = 0, b = 1, log = FALSE) {
     return(dGenericOSA("dlaplace", x=x, mu=mu, b=b, log=log))
   }
 
-  z <- abs(x - mu) / b
+  if(is.null(eps)) {
+    z <- abs(x - mu) / b
+  } else {
+    z <- abs_smooth(x - mu, eps) / b
+  }
+
   logdens <- -z - log(2 * b)
 
   if(log) return(logdens)
@@ -56,7 +63,7 @@ dlaplace <- function(x, mu = 0, b = 1, log = FALSE) {
 plaplace <- function(q, mu = 0, b = 1, lower.tail = TRUE, log.p = FALSE) {
   if (!ad_context()) {
     # ensure b > 0
-    if (b <= 0) stop("b must be strictly positive.")
+    if (!all(b > 0)) stop("b must be strictly positive.")
   }
 
   z <- (q - mu) / b
@@ -76,7 +83,7 @@ qlaplace <- function(p, mu = 0, b = 1, lower.tail = TRUE, log.p = FALSE) {
 
   if (!ad_context()) {
     # ensure b > 0
-    if (b <= 0) stop("b must be strictly positive.")
+    if (!all(b > 0)) stop("b must be strictly positive.")
   }
 
   if (log.p) p <- exp(p)
@@ -91,7 +98,7 @@ qlaplace <- function(p, mu = 0, b = 1, lower.tail = TRUE, log.p = FALSE) {
 #' @export
 rlaplace <- function(n, mu = 0, b = 1) {
   # ensure b > 0
-  if (b <= 0) stop("b must be strictly positive.")
+  if (!all(b > 0)) stop("b must be strictly positive.")
 
   u <- runif(n)
   z <- ifelse(u < 0.5, log(2 * u), -log(2 * (1 - u)))
