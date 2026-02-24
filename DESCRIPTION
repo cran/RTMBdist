@@ -2,10 +2,10 @@ Package: RTMBdist
 Type: Package
 Title: Distributions Compatible with Automatic Differentiation by
         'RTMB'
-Version: 1.0.0
+Version: 1.0.1
 Authors@R: c(
-    person(given = "Jan-Ole", family = "Koslik", 
-          email = "jan-ole.koslik@uni-bielefeld.de",
+    person(given = "Jan-Ole", family = "Fischer", 
+          email = "jan-ole.fischer@mailbox.org",
           role = c("aut", "cre"),
           comment = c(ORCID = "0009-0004-1556-9053")))
 Description: 
@@ -18,12 +18,12 @@ RoxygenNote: 7.3.3
 Suggests: knitr, rmarkdown, testthat (>= 3.0.0), LaMa (>= 2.0.6),
         Matrix, TMB, gamlss.data, mvtnorm
 Config/testthat/edition: 3
-URL: https://janoleko.github.io/RTMBdist/
+URL: https://janolefi.github.io/RTMBdist/
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2026-01-13 11:24:31 UTC; jan-ole
-Author: Jan-Ole Koslik [aut, cre] (ORCID:
+Packaged: 2026-02-24 08:49:16 UTC; jan-ole
+Author: Jan-Ole Fischer [aut, cre] (ORCID:
     <https://orcid.org/0009-0004-1556-9053>)
-Maintainer: Jan-Ole Koslik <jan-ole.koslik@uni-bielefeld.de>
+Maintainer: Jan-Ole Fischer <jan-ole.fischer@mailbox.org>
 Repository: CRAN
-Date/Publication: 2026-01-13 11:50:17 UTC
+Date/Publication: 2026-02-24 09:30:43 UTC
