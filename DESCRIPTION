@@ -2,7 +2,7 @@ Package: RTMBdist
 Type: Package
 Title: Distributions Compatible with Automatic Differentiation by
         'RTMB'
-Version: 1.0.1
+Version: 1.0.2
 Authors@R: c(
     person(given = "Jan-Ole", family = "Fischer", 
           email = "jan-ole.fischer@mailbox.org",
@@ -21,9 +21,9 @@ Config/testthat/edition: 3
 URL: https://janolefi.github.io/RTMBdist/
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2026-02-24 08:49:16 UTC; jan-ole
+Packaged: 2026-03-16 14:13:05 UTC; jan-ole
 Author: Jan-Ole Fischer [aut, cre] (ORCID:
     <https://orcid.org/0009-0004-1556-9053>)
 Maintainer: Jan-Ole Fischer <jan-ole.fischer@mailbox.org>
 Repository: CRAN
-Date/Publication: 2026-02-24 09:30:43 UTC
+Date/Publication: 2026-03-16 14:30:02 UTC

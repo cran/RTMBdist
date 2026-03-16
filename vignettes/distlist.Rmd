@@ -22,17 +22,27 @@ knitr::opts_chunk$set(
 
 * [`bct(mu, sigma, nu, tau)`](../reference/bct.html): Box-Cox t-distribution parameterised by location `mu`, scale `sigma`, skewness `nu`, and degrees of freedom `tau`
 
+* [`betaprime(shape1, shape2)`](../reference/betaprime.html): Beta prime distribution parameterised in terms of `shape1` and `shape2` of the corresponding Beta distribution
+
 * [`beta2(mu, phi)`](../reference/beta2.html): Beta distribution reparameterised by mean `mu` and precision `phi`
 
-* [`exgauss(mu, sigma, lambda)`](../reference/exgauss.html): Exponentially modified Gaussian distribution parameterised by location `mu`, scale `sigma` and rate `lambda`
+* [`exgauss(mu, sigma, lambda)`](../reference/exgauss.html): Exponentially modified Gaussian distribution parameterised by location `mu`, scale `sigma`, and rate `lambda`
 
 * [`foldnorm(mu, sigma)`](../reference/foldnorm.html): Folded normal distribution parameterised by location `mu` and scale `sigma`
 
 * [`gamma2(mean, sd)`](../reference/gamma2.html): Gamma distribution reparameterised by mean and standard deviation
 
-* [`gumbel(location, scale)`](../reference/gumbel.html): Gumbel distribution parameterised by location and scale
+* [`gengamma(mu, sigma, nu)`](../reference/gengamma.html): Generalised gamma distribution parameterised by location `mu`, scale `sigma`, and skewness `nu`
+
+* [`gumbel(location, scale)`](../reference/gumbel.html): Gumbel distribution parameterised by `location` and `scale`
+
+* [`invchisq(df, scale)`](../reference/invchisq.html): Inverse Chi-squared distribution parameterised by degrees of freedom `df` and optional `scale`
+
+* [`invgamma(shape, rate, scale)`](../reference/invgamma.html): Inverse gamma distribution parameterised by `shape`, `rate`, and `scale` of the corresponding gamma distribution
 
 * [`invgauss(mean, shape)`](../reference/invgauss.html): Inverse Gaussian distribution parameterised by mean and shape
+
+* [`kumar(a, b)`](../reference/kumar.html): Kumaraswamy distribution parameterised by shape parameters `a` and `b`
 
 * [`laplace(mu, b)`](../reference/laplace.html): Laplace distribution parameterised by location `mu` and scale `b`
 
@@ -92,6 +102,8 @@ knitr::opts_chunk$set(
 * [`genpois(lambda, phi)`](../reference/genpois.html): Generalised Poisson distribution parameterised by mean `lambda` and dispersion `phi`
 
 * [`nbinom2(mu, size)`](../reference/nbinom2.html): Negative binomial distribution reparameterised by mean `mu` and size `size`
+
+* [`skellam(mu1, mu2)`](../reference/skellam.html): Skellam distribution parameterised by Poisson means `mu1` and `mu2`
 
 * [`zibinom(size, prob, zeroprob)`](../reference/zibinom.html): Zero-inflated binomial distribution parameterised by size `size`, success probability `prob` and zero-probability `zeroprob`
 
