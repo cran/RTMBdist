@@ -2,7 +2,7 @@ Package: RTMBdist
 Type: Package
 Title: Distributions Compatible with Automatic Differentiation by
         'RTMB'
-Version: 1.0.2
+Version: 1.0.3
 Authors@R: c(
     person(given = "Jan-Ole", family = "Fischer", 
           email = "jan-ole.fischer@mailbox.org",
@@ -13,17 +13,17 @@ Description:
 License: MIT + file LICENSE
 Encoding: UTF-8
 Imports: stats, gamlss.dist, circular, sn, statmod, movMF
-Depends: R (>= 3.5.0), RTMB (>= 1.7.0)
+Depends: R (>= 3.5.0), RTMB (>= 1.9.0)
 RoxygenNote: 7.3.3
-Suggests: knitr, rmarkdown, testthat (>= 3.0.0), LaMa (>= 2.0.6),
+Suggests: knitr, rmarkdown, testthat (>= 3.0.0), LaMa (>= 2.1.0),
         Matrix, TMB, gamlss.data, mvtnorm
 Config/testthat/edition: 3
 URL: https://janolefi.github.io/RTMBdist/
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2026-03-16 14:13:05 UTC; jan-ole
+Packaged: 2026-04-01 11:59:09 UTC; jan-ole
 Author: Jan-Ole Fischer [aut, cre] (ORCID:
     <https://orcid.org/0009-0004-1556-9053>)
 Maintainer: Jan-Ole Fischer <jan-ole.fischer@mailbox.org>
 Repository: CRAN
-Date/Publication: 2026-03-16 14:30:02 UTC
+Date/Publication: 2026-04-01 13:10:02 UTC

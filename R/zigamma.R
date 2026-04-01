@@ -47,7 +47,6 @@ dzigamma = function(x, shape, scale, zeroprob = 0, log = FALSE) {
   }
 
   eps <- .Machine$double.xmin # so that gradient is not NaN bc -Inf * 0
-
   logdens <- RTMB::dgamma(x + eps, shape = shape, scale = scale, log = TRUE)
   logdens <- log_zi(x, logdens, zeroprob)
 
@@ -91,7 +90,7 @@ rzigamma <- function(n, shape, scale, zeroprob = 0) {
   if (any(zeroprob < 0 | zeroprob > 1)) stop("zeroprob must be in [0,1]")
 
   u <- runif(n)
-  res <- rep(1, n)
+  res <- rep(0, n)
   is_zero <- u < zeroprob
   res[!is_zero] <- rgamma(sum(!is_zero), shape = shape, scale = scale)
 
