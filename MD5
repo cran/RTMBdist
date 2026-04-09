@@ -1,6 +1,6 @@
-934ee4dac3837cdae40670ff518eea3a *DESCRIPTION
+fb80974143c544efe8b72a4f60e50d72 *DESCRIPTION
 d9a048a6ccc39524e9935f0a44f26525 *LICENSE
-420b6766bf2ea3e9a03412ec9d34d37b *NAMESPACE
+9bd65e77cf80e5cafc2434904987abc7 *NAMESPACE
 539c94946206db58f10875a8354d3ea6 *NEWS.md
 d1da5f4ca46c7662662ef226b7e5a0f1 *R/aaa_utils.R
 9f1961899fe28a3e834fe276018e5313 *R/bccg.R
@@ -17,12 +17,14 @@ a13cf46d240ce2b2f8f77f03d2693ba7 *R/foldnorm.R
 71139286e849b1eed272b18e14b2016e *R/gamma2.R
 d057dca2dc65723a4710d039fe5c7f84 *R/gengamma.R
 8f55dacaf4d821c2fe38f650fa796be3 *R/genpois.R
+e4668ae6512da8a6cb94a48039f21369 *R/gmrf.R
 614ae5ce64512b587d77cb75dc1984ae *R/gumbel.R
 a4776df2ad64bc5e632f314e3c9bbf8e *R/invchisq.R
 cfb6237d03f6279bb26a4e07ab1083be *R/invgamma.R
 7140b2044c9f81e21d6c9787c8f9ae7e *R/invgauss.R
 d682f9be4a5c6a987fc09f2a8dd37241 *R/kumar.R
 ecbf70bd4dd825881e31b51e2872afd4 *R/laplace.R
+ad59c5b5b7b715db1be33d531babaf37 *R/mcreport.R
 db1d3dfb4c22e1c7a95e99e9b024079e *R/mvt.R
 00d053bd0fac9c518a132aed36cdc87d *R/nbinom2.R
 4f21eb1ec5cb5be598fe2c888ac2edcd *R/oibeta.R
@@ -64,9 +66,9 @@ d4345fb42d6d2cb5c3e7571eec7a6266 *R/ziinvgauss.R
 6d9ec9a5ef95a8c19459691e537b46d9 *R/ztpois.R
 371040954f4cbc6ffb17afec9d2a25d7 *README.md
 3a128ed5ae86d50e5c479f549e062b6c *build/vignette.rds
-b1bccec6eb9126807151b7902d442adb *inst/doc/Examples.R
-f7ecfb04e47d1ecd0ff5ae15488328f5 *inst/doc/Examples.Rmd
-129947797b28a2a3d6f7a07a2e7be2f8 *inst/doc/Examples.html
+7768b56197fe633bc1258700836b8efe *inst/doc/Examples.R
+cb4bb63cc0e1cd7d0ac88ef390767be8 *inst/doc/Examples.Rmd
+51b3a11b2c235a5d52011ddd49289260 *inst/doc/Examples.html
 5e270ae6034b339c2a13d20a5f7d2dec *inst/doc/distlist.R
 30534a63fd172bfe3be5ee089b69b02f *inst/doc/distlist.Rmd
 9816939b3541de5c2517a5e1c52e8997 *inst/doc/distlist.html
@@ -105,6 +107,7 @@ c3a3459719203aa3f16b221a343f5d74 *man/invgamma.Rd
 02949dd9c7dc4c05c9a94596b5947b1f *man/invgauss.Rd
 f2468ecf0acc615cb17d53db75be1db5 *man/kumar.Rd
 3f443ca1ce939049db67d79eae774309 *man/laplace.Rd
+615336c74ba028a4b79a71e1aefb2303 *man/mcreport.Rd
 33163cea8d920f2177ead57a93389419 *man/mvt.Rd
 8a46260ca43f4103c1b0369bf0198365 *man/nbinom2.Rd
 943c2ab49fa7adb4473469e7452301b1 *man/oibeta.Rd
@@ -112,6 +115,7 @@ b7e4c07ac6c7c6a35d91ede2afd7e427 *man/oibeta2.Rd
 a7dc5fda2e31aeb677375bd8a767ff8f *man/pareto.Rd
 13c6646571f0d5a78347db2363a9450f *man/pgweibull.Rd
 93cf3f00364cc25fbc2580ad2355ce97 *man/powerexp.Rd
+76950f1f30b71cf20b995bc8fbe06ec5 *man/rgmrf.Rd
 2c6caa9426df770172c7ddd1fbd9ca92 *man/skellam.Rd
 d1e3a8307f8fac01625ec308b9c41320 *man/skewnorm.Rd
 fd420396b55cc0711fd6700ca1982d4c *man/skewnorm2.Rd
@@ -146,5 +150,5 @@ e350c0569a0ccedff62a628d2c3d9bff *man/zoibeta.Rd
 7379f0d8d2ffbf862b100478dcbfb123 *man/ztpois.Rd
 cf232374071cce2ce5da3394d81a4cb6 *tests/testthat.R
 225e3812b897786befc574f805c96dc2 *tests/testthat/test-myfunction.R
-f7ecfb04e47d1ecd0ff5ae15488328f5 *vignettes/Examples.Rmd
+cb4bb63cc0e1cd7d0ac88ef390767be8 *vignettes/Examples.Rmd
 30534a63fd172bfe3be5ee089b69b02f *vignettes/distlist.Rmd

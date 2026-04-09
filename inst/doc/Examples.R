@@ -393,7 +393,7 @@ TMB::FreeADFun(obj_copula)
 
 ## ----tape_config, include=FALSE-----------------------------------------------
 # generalised to multivariate t distributed responses
-TapeConfig(atomic="disable") ## Optional (speeds up this model)
+TapeConfig(matmul="plain") ## Optional (speeds up this model)
 
 ## ----svt data-----------------------------------------------------------------
 source("https://raw.githubusercontent.com/kaskr/RTMB/master/tmb_examples/sdv_multi_data.R")
@@ -409,7 +409,7 @@ par <- list(
   mu_y       = rep(-0.5,p),               #       ---------||---------
   off_diag_x = rep(0,p),                  #       ---------||---------
   h          = matrix(0,nrow=n,ncol=p),   #       ---------||---------
-  log_df     = log(20)                    # this allows for heavier tails
+  log_df     = log(10)                    # this allows for heavier tails
 )
 
 # Negative joint likelihood (nll) of data and parameters
@@ -419,10 +419,11 @@ nll_svt <- function(par) {
   y <- OBS(y)
   
   # Parameters on natural scale
-  sigma <- exp(log_sigma)
-  phi <- plogis(logit_phi)
+  sigma <- exp(log_sigma); ADREPORT(sigma)
+  phi <- plogis(logit_phi); ADREPORT(phi)
   sigma_init <- sigma / sqrt(1-phi^2)
-  df <- exp(log_df)
+  df <- exp(log_df); ADREPORT(df)
+  ADREPORT(mu_y)
   
   nll <- 0  # Start collecting contributions
   
@@ -452,6 +453,6 @@ obj_svt <- MakeADFun(nll_svt, par, random="h", silent = TRUE)
 system.time(
   opt_svt <- nlminb(obj_svt$par, obj_svt$fn, obj_svt$gr)
 )
-rep <- sdreport(obj_svt)
-rep
+sdr_svt <- sdreport(obj_svt)
+summary(sdr_svt, "report")
 
