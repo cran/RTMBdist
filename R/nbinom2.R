@@ -8,10 +8,12 @@
 #'
 #' \code{pnbinom} is an AD-compatible implementation of the standard parameterisation of the CDF, missing from \code{RTMB}.
 #'
+#' Reparameterises the negative binomial by mean \eqn{\mu} via \eqn{p = r/(r+\mu)}:
+#' \deqn{P(X=k;\,\mu,r) = \binom{k+r-1}{k}\left(\frac{r}{r+\mu}\right)^r\left(\frac{\mu}{r+\mu}\right)^k, \quad k = 0,1,2,\ldots}
+#'
 #' @param x,q vector of quantiles
 #' @param p vector of probabilities
 #' @param n number of random values to return.
-#' @param prob probability of success in each trial. 0 < prob <= 1.
 #' @param mu mean parameter, must be positive.
 #' @param size size parameter, must be positive.
 #' @param log,log.p logical; if \code{TRUE}, probabilities/ densities \eqn{p} are returned as \eqn{\log(p)}.
@@ -97,21 +99,19 @@ rnbinom2 <- function(n, mu, size) {
 
   stats::rnbinom(n, mu = mu, size = size)
 }
-#' @rdname nbinom2
-#' @export
-#' @importFrom RTMB pbeta
-pnbinom <- function(q, size, prob, lower.tail = TRUE, log.p = FALSE) {
-  if(!ad_context()) {
-    # ensure mu, size > 0
-    if (any(prob < 0 | prob > 1)) stop("prob must be in [0,1]")
-    if (any(size <= 0)) stop("size must be strictly positive.")
-  }
 
-  p <- RTMB::pbeta(prob, size, q+1) # doesn't look correct but is
-  # RTMB doesn't have AD version of pbinom
-
-  if(!lower.tail) p <- 1 - p
-  if(log.p) p <- log(p)
-
-  return(p)
-}
+# pnbinom <- function(q, size, prob, lower.tail = TRUE, log.p = FALSE) {
+#   if(!ad_context()) {
+#     # ensure mu, size > 0
+#     if (any(prob < 0 | prob > 1)) stop("prob must be in [0,1]")
+#     if (any(size <= 0)) stop("size must be strictly positive.")
+#   }
+#
+#   p <- RTMB::pbeta(prob, size, q+1) # doesn't look correct but is
+#   # RTMB doesn't have AD version of pbinom
+#
+#   if(!lower.tail) p <- 1 - p
+#   if(log.p) p <- log(p)
+#
+#   return(p)
+# }

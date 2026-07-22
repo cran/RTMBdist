@@ -18,7 +18,7 @@ roibeta(n, shape1, shape2, oneprob = 0)
 
 \item{shape1, shape2}{non-negative shape parameters of the beta distribution}
 
-\item{oneprob}{zero-inflation probability between 0 and 1.}
+\item{oneprob}{one-inflation probability between 0 and 1.}
 
 \item{log, log.p}{logical; if \code{TRUE}, probabilities/ densities \eqn{p} are returned as \eqn{\log(p)}.}
 
@@ -35,6 +35,9 @@ the one-inflated beta distribution.
 }
 \details{
 This implementation allows for automatic differentiation with \code{RTMB}.
+
+\deqn{f(x;\,a,b,p_1) = p_1\,\mathbf{1}[x=1] + (1-p_1)\,f_{\mathrm{Beta}}(x;\,a,b)\,\mathbf{1}[x\in(0,1)],}
+where \eqn{f_{\mathrm{Beta}}} is the beta density and \eqn{p_1} is \code{oneprob}.
 }
 \examples{
 set.seed(123)

@@ -6,11 +6,14 @@
 #' @details
 #' This implementation allows for automatic differentiation with \code{RTMB}.
 #'
+#' \deqn{f(x;\,a,b,p_0,p_1) = p_0\,\mathbf{1}[x=0] + (1-p_0-p_1)\,f_{\mathrm{Beta}}(x;\,a,b)\,\mathbf{1}[x\in(0,1)] + p_1\,\mathbf{1}[x=1],}
+#' where \eqn{p_0} = \code{zeroprob} and \eqn{p_1} = \code{oneprob}.
+#'
 #' @param x,q vector of quantiles
 #' @param n number of random values to return.
 #' @param shape1,shape2 non-negative shape parameters of the beta distribution
 #' @param zeroprob zero-inflation probability between 0 and 1.
-#' @param oneprob zero-inflation probability between 0 and 1.
+#' @param oneprob one-inflation probability between 0 and 1.
 #' @param log,log.p logical; if \code{TRUE}, probabilities/ densities \eqn{p} are returned as \eqn{\log(p)}.
 #' @param lower.tail logical; if \code{TRUE}, probabilities are \eqn{P[X \le x]}, otherwise, \eqn{P[X > x]}.
 #'
@@ -55,7 +58,8 @@ dzoibeta <- function(x, shape1, shape2, zeroprob = 0, oneprob = 0, log = FALSE) 
                        zeroprob=zeroprob, oneprob=oneprob, log=log))
   }
 
-  logdens <- RTMB::dbeta(x, shape1 = shape1, shape2 = shape2, log = TRUE)
+  logdens <- dbeta(x, shape1 = shape1, shape2 = shape2, log = TRUE,
+                   eps = .Machine$double.xmin)
 
   # turn + Inf into finite
   logdens <- as.finite(logdens)

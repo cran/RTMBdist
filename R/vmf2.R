@@ -46,6 +46,8 @@ dvmf2 <- function(x, theta, log = FALSE) {
     x[] <- rvmf2(n, theta=theta)
     return(0)
   }
+  if(inherits(x, "osa"))
+    stop("OSA residuals are not supported for dvmf2")
 
   # if x or theta are vectors, turn into 1 x p matrices
   if(is.null(dim(x))) x <- matrix(x, nrow = 1)
@@ -56,6 +58,10 @@ dvmf2 <- function(x, theta, log = FALSE) {
 
   # check if mu has the correct dimension
   if(ncol(theta) != p) stop("x and theta must have the same dimension")
+
+  # broadcast single theta row across all observations
+  if(nrow(x) > 1 && nrow(theta) == 1)
+    theta <- theta[rep(1L, nrow(x)), , drop = FALSE]
 
   kappa <- sqrt(rowSums(theta^2)) # kappa is the norm of theta
 

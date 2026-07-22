@@ -8,7 +8,7 @@
 #'
 #' The inverse Chi-squared distribution with \eqn{\nu} degrees of freedom has
 #' density
-#' \deqn{f(x) = \frac{(\nu/2)^{\nu/2}}{\Gamma(\nu/2)} x^{-(\nu/2+1)} \exp(-\nu/(2x)), \quad x>0.}
+#' \deqn{f(x) = \frac{(\nu s/2)^{\nu/2}}{\Gamma(\nu/2)} x^{-(\nu/2+1)} \exp\!\left(-\frac{\nu s}{2x}\right), \quad x>0,}
 #'
 #' This implementation of \code{dinvchisq}, \code{pinvchisq}, and \code{qinvchisq} allows for automatic differentiation with \code{RTMB}.
 #'
@@ -16,7 +16,7 @@
 #' @param p vector of probabilities
 #' @param n number of random values to return
 #' @param df degrees of freedom (\eqn{\nu > 0})
-#' @param scale optional positive scale parameter. Default value of \code{1/df} corresponds to standard inverse gamma
+#' @param scale optional positive scale parameter. Default value of \code{1/df} corresponds to standard inverse Chi-squared
 #' @param log,log.p logical; if \code{TRUE}, probabilities/densities are returned as \eqn{\log(p)}.
 #' @param lower.tail logical; if \code{TRUE}, probabilities are \eqn{P[X \le x]}, otherwise, \eqn{P[X > x]}.
 #'
@@ -110,5 +110,5 @@ rinvchisq <- function(n, df, scale = 1/df) {
 
   nu2 <- df / 2
   y <- stats::rgamma(n, shape = nu2, rate = 1)
-  1 / y
+  nu2 * scale / y
 }

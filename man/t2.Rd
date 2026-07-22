@@ -11,11 +11,11 @@
 \usage{
 dt2(x, mu, sigma, df, log = FALSE)
 
-pt2(q, mu, sigma, df)
+pt2(q, mu, sigma, df, lower.tail = TRUE, log.p = FALSE)
 
 rt2(n, mu, sigma, df)
 
-qt2(p, mu, sigma, df)
+qt2(p, mu, sigma, df, lower.tail = TRUE, log.p = FALSE)
 
 pt(q, df)
 }
@@ -28,7 +28,9 @@ pt(q, df)
 
 \item{df}{degrees of freedom, must be positive.}
 
-\item{log}{logical; if \code{TRUE}, probabilities/ densities \eqn{p} are returned as \eqn{\log(p)}.}
+\item{log, log.p}{logical; if \code{TRUE}, probabilities/ densities \eqn{p} are returned as \eqn{\log(p)}.}
+
+\item{lower.tail}{logical; if \code{TRUE} (default), probabilities are \eqn{P[X \le x]}, otherwise \eqn{P[X > x]}.}
 
 \item{n}{number of random values to return.}
 
@@ -43,6 +45,9 @@ the t distribution with location and scale parameters.
 }
 \details{
 This implementation of \code{dt2} allows for automatic differentiation with \code{RTMB}.
+
+\deqn{f(x;\,\mu,\sigma,\nu) = \frac{1}{\sigma}\,f_t\!\left(\frac{x-\mu}{\sigma};\,\nu\right),}
+where \eqn{f_t(\cdot;\nu)} is the Student-\eqn{t} PDF with \eqn{\nu} degrees of freedom.
 }
 \examples{
 x <- rt2(1, 1, 2, 5)

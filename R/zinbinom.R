@@ -6,6 +6,9 @@
 #' @details
 #' This implementation allows for automatic differentiation with \code{RTMB}.
 #'
+#' \deqn{P(X=k;\,r,p,p_0) = p_0\,\mathbf{1}[k=0] + (1-p_0)\,P_{\mathrm{NB}}(k;\,r,p),}
+#' where \eqn{p_0} is \code{zeroprob}.
+#'
 #' @param x,q vector of (non-negative integer) quantiles
 #' @param p vector of probabilities
 #' @param n number of random values to return.
@@ -66,7 +69,7 @@ pzinbinom <- function(q, size, prob, zeroprob = 0, lower.tail = TRUE, log.p = FA
   }
 
   # pnbinom gives 0 for q < 0, so no handling of that case necessary
-  p <- zeroprob + (1 - zeroprob) * pnbinom(q, size=size, prob=prob)
+  p <- zeroprob + (1 - zeroprob) * RTMB::pnbinom(q, size = size, prob = prob)
 
   if (!lower.tail) p <- 1 - p
   if (log.p) p <- log(p)

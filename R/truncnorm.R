@@ -6,6 +6,9 @@
 #' @details
 #' This implementation of \code{dtruncnorm} allows for automatic differentiation with \code{RTMB}.
 #'
+#' \deqn{f(x;\,\mu,\sigma,a,b) = \frac{\phi((x-\mu)/\sigma)/\sigma}{\Phi((b-\mu)/\sigma) - \Phi((a-\mu)/\sigma)}, \quad x \in [a, b],}
+#' where \eqn{\phi} and \eqn{\Phi} are the standard normal PDF and CDF.
+#'
 #' @param x,q vector of quantiles
 #' @param p vector of probabilities
 #' @param n number of random values to return.
@@ -48,9 +51,6 @@ dtruncnorm <- function(x, mean = 0, sd = 1, min = -Inf, max = Inf, log = FALSE) 
 
   # normalisation constant: probability of being within [min, max]
   denom <- RTMB::pnorm(max, mean, sd) - RTMB::pnorm(min, mean, sd)
-
-  # initialise log-density vector
-  logdens <- rep(NaN, length(x))
 
   # logical vector for values inside the truncation bounds
   # inside <- (x >= min) & (x <= max)

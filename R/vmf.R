@@ -5,6 +5,9 @@
 #' @details
 #' This implementation of \code{dvmf} allows for automatic differentiation with \code{RTMB}. \code{rvmf} is a reparameterised import from \code{movMF::rmovMF}.
 #'
+#' \deqn{f(\mathbf{x};\,\boldsymbol{\mu},\kappa) = C_p(\kappa)\,\exp(\kappa\,\boldsymbol{\mu}^\top\mathbf{x}),}
+#' where \eqn{C_p(\kappa) = \kappa^{p/2-1} / ((2\pi)^{p/2} I_{p/2-1}(\kappa))} is the normalising constant and \eqn{I_\nu} is the modified Bessel function of the first kind of order \eqn{\nu}.
+#'
 #' @param x unit vector or matrix (with each row being a unit vector) of evaluation points
 #' @param mu unit mean vector
 #' @param kappa non-negative numeric value for the concentration parameter of the distribution.
@@ -62,6 +65,10 @@ dvmf <- function(x, mu, kappa, log = FALSE) {
 
   # check if mu has the correct dimension
   if(ncol(mu) != p) stop("x and mu must have the same dimension")
+
+  # broadcast single mu row across all observations
+  if(nrow(x) > 1 && nrow(mu) == 1)
+    mu <- mu[rep(1L, nrow(x)), , drop = FALSE]
 
   cprod <- rowSums(mu * x) # t(mu) %*% x for each row fast
 

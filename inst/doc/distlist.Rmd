@@ -34,6 +34,8 @@ knitr::opts_chunk$set(
 
 * [`gengamma(mu, sigma, nu)`](../reference/gengamma.html): Generalised gamma distribution parameterised by location `mu`, scale `sigma`, and skewness `nu`
 
+* [`gompertz(eta, b)`](../reference/gompertz.html): Gompertz distribution parameterised by shape `eta` and rate `b`
+
 * [`gumbel(location, scale)`](../reference/gumbel.html): Gumbel distribution parameterised by `location` and `scale`
 
 * [`invchisq(df, scale)`](../reference/invchisq.html): Inverse Chi-squared distribution parameterised by degrees of freedom `df` and optional `scale`
@@ -45,6 +47,8 @@ knitr::opts_chunk$set(
 * [`kumar(a, b)`](../reference/kumar.html): Kumaraswamy distribution parameterised by shape parameters `a` and `b`
 
 * [`laplace(mu, b)`](../reference/laplace.html): Laplace distribution parameterised by location `mu` and scale `b`
+
+* [`llogis(alpha, beta)`](../reference/llogis.html): Log-logistic distribution parameterised by scale `alpha` (equal to the median) and shape `beta`
 
 * [`oibeta(shape1, shape2, oneprob)`](../reference/oibeta.html): One-inflated beta distribution parameterised by shape parameters `shape1`, `shape2` and one-probability `oneprob`
 

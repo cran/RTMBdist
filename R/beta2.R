@@ -8,6 +8,10 @@
 #'
 #' Currently, \code{dbeta} masks \code{RTMB::dbeta} because the latter has a numerically unstable gradient.
 #'
+#' \code{dbeta} and \code{dbeta2} compute the beta density. \code{dbeta2} reparameterises by
+#' mean \eqn{\mu} and concentration \eqn{\phi}:
+#' \deqn{f(x; \mu, \phi) = \frac{x^{\mu\phi - 1}(1-x)^{(1-\mu)\phi - 1}}{B(\mu\phi,\, (1-\mu)\phi)}, \quad x \in (0,1).}
+#'
 #' @param x,q vector of quantiles
 #' @param p vector of probabilities
 #' @param n number of random values to return.
@@ -53,8 +57,10 @@ dbeta <- function(x, shape1, shape2, log = FALSE, eps = 0) {
 
   logB <- lbeta.ad(shape1, shape2)
   # logB <- RTMB::lbeta(shape1, shape2)
+  # logdens <- (shape1 - 1) * log(x + eps) + (shape2 - 1) * log1p(-x + eps) - logB
   logdens <- (shape1 - 1) * log(x + eps) +
-    (shape2 - 1) * log1p(-x + eps) - logB
+    (shape2 - 1) * log(1 - x + eps) - # log(1 - x) actually works better here if x = 1
+    logB
 
   if(log) return(logdens)
   return(exp(logdens))

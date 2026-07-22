@@ -3,6 +3,9 @@
 #' Density, distribution function, quantile function, and random generation for
 #' the Kumaraswamy distribution.
 #'
+#' @details
+#' \deqn{f(x;\,a,b) = a b\, x^{a-1}(1-x^a)^{b-1}, \quad x \in (0,1).}
+#'
 #' @param x,q vector of quantiles in \eqn{(0,1)}
 #' @param p vector of probabilities
 #' @param a,b positive shape parameters
@@ -41,7 +44,7 @@ dkumar <- function(x, a, b, log = FALSE) {
     return(dGenericOSA("dkumar", x=x, a=a, b=b, log=log))
   }
 
-  logdens <- log(a) + log(b) + (a-1) * log(x) + (b-1) * log1p(-x^a)
+  logdens <- log(a) + log(b) + (a-1) * log(x) + (b-1) * as.finite(log1p(-x^a))
 
   if(log) return(logdens)
   return(exp(logdens))
@@ -90,10 +93,12 @@ qkumar <- function(p, a, b, lower.tail = TRUE, log.p = FALSE) {
 #' @importFrom stats runif
 rkumar <- function(n, a, b) {
 
-  args <- as.list(environment())
-  simulation_check(args) # informative error message if likelihood in wrong order
-  if (any(a <= 0))  stop("a must be positive")
-  if (any(b <= 0))  stop("b must be positive")
+  if (!ad_context()) {
+    args <- as.list(environment())
+    simulation_check(args) # informative error message if likelihood in wrong order
+    if (any(a <= 0))  stop("a must be positive")
+    if (any(b <= 0))  stop("b must be positive")
+  }
 
   n <- ceiling(n)
   p <- runif(n)

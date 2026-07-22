@@ -6,10 +6,13 @@
 #' @details
 #' This implementation allows for automatic differentiation with \code{RTMB}.
 #'
+#' \deqn{f(x;\,a,b,p_1) = p_1\,\mathbf{1}[x=1] + (1-p_1)\,f_{\mathrm{Beta}}(x;\,a,b)\,\mathbf{1}[x\in(0,1)],}
+#' where \eqn{f_{\mathrm{Beta}}} is the beta density and \eqn{p_1} is \code{oneprob}.
+#'
 #' @param x,q vector of quantiles
 #' @param n number of random values to return.
 #' @param shape1,shape2 non-negative shape parameters of the beta distribution
-#' @param oneprob zero-inflation probability between 0 and 1.
+#' @param oneprob one-inflation probability between 0 and 1.
 #' @param log,log.p logical; if \code{TRUE}, probabilities/ densities \eqn{p} are returned as \eqn{\log(p)}.
 #' @param lower.tail logical; if \code{TRUE}, probabilities are \eqn{P[X \le x]}, otherwise, \eqn{P[X > x]}.
 #'
@@ -48,7 +51,8 @@ doibeta <- function(x, shape1, shape2, oneprob = 0, log = FALSE) {
     return(dGenericOSA("doibeta", x=x, shape1=shape1, shape2=shape2, oneprob=oneprob, log=log))
   }
 
-  logdens <- RTMB::dbeta(x, shape1 = shape1, shape2 = shape2, log = TRUE)
+  logdens <- dbeta(x, shape1 = shape1, shape2 = shape2, log = TRUE,
+                   eps = .Machine$double.xmin)
   logdens <- log_zi(x-1, logdens, oneprob) # use zi function for one inflation by shifting x
 
   # making sure x == 0 evaluates to -Inf

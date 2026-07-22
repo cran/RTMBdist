@@ -11,6 +11,9 @@
 #' \strong{Caution:} In a numerial optimisation, the \code{skew} parameter should NEVER be initialised with exactly zero.
 #' This will cause the initial and all subsequent derivatives to be exactly zero and hence the parameter will remain at its initial value.
 #'
+#' \deqn{f(x;\,\mu,\sigma,\lambda,\nu) = \frac{2}{\sigma}\, f_t\!\left(\frac{x-\mu}{\sigma};\,\nu\right) F_t\!\left(\lambda\sqrt{\frac{\nu+1}{\nu + z^2}}\cdot z;\,\nu+1\right),}
+#' where \eqn{z=(x-\mu)/\sigma}, \eqn{f_t(\cdot;\nu)} is the Student-\eqn{t} PDF, and \eqn{F_t(\cdot;\nu+1)} is its CDF.
+#'
 #' @seealso [skewt2], [skewnorm], [skewnorm2]
 #'
 #' @param x,q vector of quantiles
@@ -76,24 +79,31 @@ dskewt <- function(x, mu = 0, sigma = 1, skew = 0, df = 1e2, log = FALSE) {
 #' pskewt(q, mu = 0, sigma = 1, skew = 0, df = 100,
 #'        method = 0, lower.tail = TRUE, log.p = FALSE)
 #' @importFrom sn pst
-pskewt <- function(q, mu = 0, sigma = 1, skew = 0, df = 1e2, method = 0, lower.tail = TRUE, log.p = FALSE) {
+pskewt <- function(q, mu = 0, sigma = 1, skew = 0, df = 1e2, method = 0,
+                   lower.tail = TRUE, log.p = FALSE) {
   # ensure sigma, df > 0
   # if (sigma <= 0) stop("sigma must be strictly positive.")
   # if (df <= 0) stop("df must be strictly positive.")
 
-  pst(q, xi=mu, omega=sigma, alpha=skew, nu=df, method=method, lower.tail=lower.tail, log.p=log.p)
+  p <- pst(q, xi=mu, omega=sigma, alpha=skew, nu=df, method=method)
+  if (!lower.tail) p <- 1 - p
+  if (log.p) p <- log(p)
+  p
 }
 
 #' @rdname skewt
 #' @export
 #' @usage
 #' qskewt(p, mu = 0, sigma = 1, skew = 0, df = 100,
-#'        tol = 1e-8, method = 0)
+#'        tol = 1e-8, method = 0, lower.tail = TRUE, log.p = FALSE)
 #' @importFrom sn qst
-qskewt <- function(p, mu = 0, sigma = 1, skew = 0, df = 1e2, tol = 1e-8, method = 0) {
+qskewt <- function(p, mu = 0, sigma = 1, skew = 0, df = 1e2, tol = 1e-8, method = 0,
+                   lower.tail = TRUE, log.p = FALSE) {
   # ensure sigma, df > 0
   if (any(sigma <= 0)) stop("sigma must be strictly positive.")
   if (any(df <= 0)) stop("df must be strictly positive.")
+  if (log.p) p <- exp(p)
+  if (!lower.tail) p <- 1 - p
   qst(p, xi=mu, omega=sigma, alpha=skew, nu=df, tol=tol, method=method)
 }
 

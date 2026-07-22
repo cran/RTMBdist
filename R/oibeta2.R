@@ -6,11 +6,14 @@
 #' @details
 #' This implementation allows for automatic differentiation with \code{RTMB}.
 #'
+#' Uses the same density as \code{oibeta} with \eqn{a = \mu\phi} and \eqn{b = (1-\mu)\phi}:
+#' \deqn{f(x;\,\mu,\phi,p_1) = p_1\,\mathbf{1}[x=1] + (1-p_1)\,f_{\mathrm{Beta}}(x;\,\mu\phi,\,(1-\mu)\phi)\,\mathbf{1}[x\in(0,1)].}
+#'
 #' @param x,q vector of quantiles
 #' @param n number of random values to return.
 #' @param mu mean parameter, must be in the interval from 0 to 1.
 #' @param phi concentration parameter, must be positive.
-#' @param oneprob zero-inflation probability between 0 and 1.
+#' @param oneprob one-inflation probability between 0 and 1.
 #' @param log,log.p logical; if \code{TRUE}, probabilities/ densities \eqn{p} are returned as \eqn{\log(p)}.
 #' @param lower.tail logical; if \code{TRUE}, probabilities are \eqn{P[X \le x]}, otherwise, \eqn{P[X > x]}.
 #'

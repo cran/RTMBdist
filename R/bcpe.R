@@ -24,6 +24,10 @@ F.T <- function(t, tau){
 #' This implementation of \code{dbcpe} and \code{pbcpe} allows for automatic differentiation with \code{RTMB} while the other functions are imported from \code{gamlss.dist} package.
 #' See \code{gamlss.dist::\link[gamlss.dist]{BCPE}} for more details.
 #'
+#' The density is
+#' \deqn{f(x; \mu, \sigma, \nu, \tau) = \frac{x^{\nu-1}}{\mu^{\nu} \sigma} \frac{f_T(z;\tau)}{F_T\!\left(1/(\sigma|\nu|);\tau\right)}, \quad x > 0,}
+#' where \eqn{z = [(x/\mu)^\nu - 1]/(\nu\sigma)} for \eqn{\nu \neq 0} and \eqn{z = \log(x/\mu)/\sigma} for \eqn{\nu = 0}, and \eqn{f_T(\cdot;\tau)} and \eqn{F_T(\cdot;\tau)} are the PDF and CDF of the power exponential (PE) distribution with shape \eqn{\tau}.
+#'
 #' @references
 #' Rigby, R. A., Stasinopoulos, D. M., Heller, G. Z., and De Bastiani, F. (2019) Distributions for modeling location, scale, and shape: Using GAMLSS in R, Chapman and Hall/CRC,
 #' doi:10.1201/9780429298547. An older version can be found in https://www.gamlss.com/.
@@ -60,9 +64,9 @@ dbcpe <- function(x, mu = 5, sigma = 0.1, nu = 1, tau = 2, log = FALSE) {
   if(!ad_context()) {
     args <- as.list(environment())
     simulation_check(args) # informative error message if likelihood in wrong order
-    if (any(mu < 0))  stop("mu must be > 0")
-    if (any(sigma < 0))  stop("sigma must be > 0")
-    if (any(tau < 0))  stop("tau must be > 0")
+    if (any(mu <= 0))  stop("mu must be > 0")
+    if (any(sigma <= 0))  stop("sigma must be > 0")
+    if (any(tau <= 0))  stop("tau must be > 0")
   }
 
   # potentially escape to RNG or CDF
@@ -111,20 +115,10 @@ pbcpe <- function(q, mu = 5, sigma = 0.1, nu = 1, tau = 2, lower.tail = TRUE, lo
   # and modified to allow for automatic differentiation
 
   if(!ad_context()) {
-    if (any(mu < 0))  stop("mu must be > 0")
-    if (any(sigma < 0))  stop("sigma must be > 0")
-    if (any(tau < 0))  stop("tau must be > 0")
+    if (any(mu <= 0))  stop("mu must be > 0")
+    if (any(sigma <= 0))  stop("sigma must be > 0")
+    if (any(tau <= 0))  stop("tau must be > 0")
   }
-
-  ## length of return value
-  n <- max(length(q), length(mu), length(sigma), length(nu), length(tau))
-  q <- rep_len(q, n)
-  mu <- rep_len(mu, n)
-  sigma <- rep_len(sigma, n)
-  nu <- rep_len(nu, n)
-  tau <- rep_len(tau, n)
-  z <- rep_len(0, n)
-  FYy2 <- FYy1 <- FYy3 <- rep_len(0, n)
 
   ##  calculate the cdf
   iz <- iszero(nu)
@@ -160,12 +154,12 @@ qbcpe <- function(p, mu = 5, sigma = 0.1, nu = 1, tau = 2, lower.tail = TRUE, lo
 }
 #' @rdname bcpe
 #' @export
-#' @importFrom gamlss.dist pBCPE
+#' @importFrom gamlss.dist rBCPE
 rbcpe <- function(n, mu = 5, sigma = 0.1, nu = 1, tau = 2) {
 
-  if (any(mu < 0))  stop("mu must be > 0")
-  if (any(sigma < 0))  stop("sigma must be > 0")
-  if (any(tau < 0))  stop("tau must be > 0")
+  if (any(mu <= 0))  stop("mu must be > 0")
+  if (any(sigma <= 0))  stop("sigma must be > 0")
+  if (any(tau <= 0))  stop("tau must be > 0")
 
   gamlss.dist::rBCPE(n, mu = mu, sigma = sigma, nu = nu, tau = tau)
 }

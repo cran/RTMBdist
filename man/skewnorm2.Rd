@@ -10,9 +10,9 @@
 \usage{
 dskewnorm2(x, mean = 0, sd = 1, alpha = 0, log = FALSE)
 
-pskewnorm2(q, mean = 0, sd = 1, alpha = 0, ...)
+pskewnorm2(q, mean = 0, sd = 1, alpha = 0, lower.tail = TRUE, log.p = FALSE)
 
-qskewnorm2(p, mean = 0, sd = 1, alpha = 0, ...)
+qskewnorm2(p, mean = 0, sd = 1, alpha = 0, lower.tail = TRUE, log.p = FALSE)
 
 rskewnorm2(n, mean = 0, sd = 1, alpha = 0)
 }
@@ -25,9 +25,9 @@ rskewnorm2(n, mean = 0, sd = 1, alpha = 0)
 
 \item{alpha}{skewness parameter, +/- \code{Inf} is allowed.}
 
-\item{log}{logical; if \code{TRUE}, probabilities/ densities \eqn{p} are returned as \eqn{\log(p)}.}
+\item{log, log.p}{logical; if \code{TRUE}, probabilities/ densities \eqn{p} are returned as \eqn{\log(p)}.}
 
-\item{...}{additional parameters to be passed to the \code{sn} package functions for \code{pskewnorm} and \code{qskewnorm}.}
+\item{lower.tail}{logical; if \code{TRUE} (default), probabilities are \eqn{P[X \le x]}, otherwise \eqn{P[X > x]}.}
 
 \item{p}{vector of probabilities}
 
@@ -42,6 +42,10 @@ the skew normal distribution reparameterised in terms of mean, standard deviatio
 }
 \details{
 This implementation of \code{dskewnorm2} allows for automatic differentiation with \code{RTMB} while the other functions are imported from the \code{sn} package.
+
+Uses the same density as \code{skewnorm} with location \eqn{\xi}, scale \eqn{\omega}, and shape \eqn{\alpha}
+reparameterised from the mean \eqn{m}, standard deviation \eqn{s}, and skewness parameter \eqn{\alpha}:
+\deqn{\delta = \frac{\alpha}{\sqrt{1+\alpha^2}}, \quad \omega = \frac{s}{\sqrt{1 - 2\delta^2/\pi}}, \quad \xi = m - \omega\delta\sqrt{2/\pi}.}
 }
 \examples{
 # alpha is skew parameter

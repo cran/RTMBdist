@@ -9,7 +9,7 @@
 \usage{
 dzigamma2(x, mean = 1, sd = 1, zeroprob = 0, log = FALSE)
 
-pzigamma2(q, mean = 1, sd = 1, zeroprob = 0)
+pzigamma2(q, mean = 1, sd = 1, zeroprob = 0, lower.tail = TRUE, log.p = FALSE)
 
 rzigamma2(n, mean = 1, sd = 1, zeroprob = 0)
 }
@@ -22,12 +22,14 @@ rzigamma2(n, mean = 1, sd = 1, zeroprob = 0)
 
 \item{zeroprob}{zero-inflation probability between 0 and 1.}
 
-\item{log}{logical; if \code{TRUE}, probabilities/ densities \eqn{p} are returned as \eqn{\log(p)}.}
+\item{log, log.p}{logical; if \code{TRUE}, probabilities/ densities \eqn{p} are returned as \eqn{\log(p)}.}
+
+\item{lower.tail}{logical; if \code{TRUE} (default), probabilities are \eqn{P[X \le x]}, otherwise \eqn{P[X > x]}.}
 
 \item{n}{number of random values to return}
 }
 \value{
-\code{dzigamma2} gives the density, \code{pzigamma2} gives the distribution function, and \code{rzigamma} generates random deviates.
+\code{dzigamma2} gives the density, \code{pzigamma2} gives the distribution function, and \code{rzigamma2} generates random deviates.
 }
 \description{
 Density, distribution function, and random generation for
@@ -35,6 +37,9 @@ the zero-inflated gamma distribution reparameterised in terms of mean and standa
 }
 \details{
 This implementation allows for automatic differentiation with \code{RTMB}.
+
+Uses the same density as \code{zigamma} with \eqn{\text{shape} = \mu^2/s^2} and \eqn{\text{scale} = s^2/\mu}:
+\deqn{f(x;\,\mu,s,p_0) = p_0\,\mathbf{1}[x=0] + (1-p_0)\,f_{\mathrm{Gamma}}(x;\,\mu^2/s^2,\,s^2/\mu)\,\mathbf{1}[x>0].}
 }
 \examples{
 x <- rzigamma2(1, 2, 1, 0.5)

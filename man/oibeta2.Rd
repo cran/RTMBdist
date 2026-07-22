@@ -20,7 +20,7 @@ roibeta2(n, mu, phi, oneprob = 0)
 
 \item{phi}{concentration parameter, must be positive.}
 
-\item{oneprob}{zero-inflation probability between 0 and 1.}
+\item{oneprob}{one-inflation probability between 0 and 1.}
 
 \item{log, log.p}{logical; if \code{TRUE}, probabilities/ densities \eqn{p} are returned as \eqn{\log(p)}.}
 
@@ -37,6 +37,9 @@ the one-inflated beta distribution reparameterised in terms of mean and concentr
 }
 \details{
 This implementation allows for automatic differentiation with \code{RTMB}.
+
+Uses the same density as \code{oibeta} with \eqn{a = \mu\phi} and \eqn{b = (1-\mu)\phi}:
+\deqn{f(x;\,\mu,\phi,p_1) = p_1\,\mathbf{1}[x=1] + (1-p_1)\,f_{\mathrm{Beta}}(x;\,\mu\phi,\,(1-\mu)\phi)\,\mathbf{1}[x\in(0,1)].}
 }
 \examples{
 set.seed(123)

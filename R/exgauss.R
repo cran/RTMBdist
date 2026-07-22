@@ -10,6 +10,10 @@
 #' If \eqn{X \sim N(\mu, \sigma^2)} and \eqn{Y \sim \text{Exp}(\lambda)}, then
 #' \eqn{Z = X + Y} follows the exponentially modified Gaussian distribution with parameters \eqn{\mu}, \eqn{\sigma}, and \eqn{\lambda}.
 #'
+#' The density is
+#' \deqn{f(x;\,\mu,\sigma,\lambda) = \lambda \exp\!\Bigl(\lambda\mu + \tfrac{\lambda^2\sigma^2}{2} - \lambda x\Bigr)\, \Phi\!\left(\frac{x - \mu - \lambda\sigma^2}{\sigma}\right),}
+#' where \eqn{\Phi} is the standard normal CDF.
+#'
 #' @references
 #' Rigby, R. A., Stasinopoulos, D. M., Heller, G. Z., and De Bastiani, F. (2019) Distributions for modeling location, scale, and shape: Using GAMLSS in R, Chapman and Hall/CRC,
 #' doi:10.1201/9780429298547. An older version can be found in https://www.gamlss.com/.
@@ -58,10 +62,6 @@ dexgauss <- function(x, mu = 0, sigma = 1, lambda = 1, log = FALSE) {
     return(dGenericOSA("dexgauss", x=x, mu=mu, sigma=sigma, lambda=lambda, log=log))
   }
 
-  ly <- length(x)
-  mu <- rep(mu, length = ly)
-  sigma <- rep(sigma, length = ly)
-  lambda <- rep(lambda, length = ly)
   nu <- 1 / lambda
 
   z <- x - mu - ((sigma * sigma) / nu)
@@ -88,10 +88,6 @@ pexgauss <- function(q, mu = 0, sigma = 1, lambda = 1, lower.tail = TRUE, log.p 
     if (any(lambda <= 0)) stop("lambda must be > 0")
   }
 
-  ly <- length(q)
-  mu <- rep(mu, length = ly)
-  sigma <- rep(sigma, length = ly)
-  lamba <- rep(lambda, length = ly)
   nu <- 1 / lambda
 
   z <- q - mu - (sigma^2 / nu)
