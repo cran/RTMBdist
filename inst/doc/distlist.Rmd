@@ -14,6 +14,8 @@ knitr::opts_chunk$set(
 )
 ```
 
+Note that some famous non-standard distributions (Tweedie, SHASHo, COM-Pois, Cauchy) are already implemented in `RTMB`; check the distributions listed [here](https://kaskr.r-universe.dev/RTMB/doc/manual.html#Distributions).
+
 ## Continuous distributions
 
 * [`bccg(mu, sigma, nu)`](../reference/bccg.html): Box-Cox Cole and Green distribution parameterised by location `mu`, scale `sigma`, and skewness `nu`
@@ -104,6 +106,8 @@ knitr::opts_chunk$set(
 ## Discrete distributions
 
 * [`betabinom(size, shape1, shape2)`](../reference/betabinom.html): Beta-binomial distribution parameterised by size `size`, shape parameters `shape1` and `shape2`
+
+* [`combinom(size, prob, nu)`](../reference/combinom.html): Conway-Maxwell-binomial distribution parameterised by size `size`, success probability `prob` and dispersion `nu`
 
 * [`genpois(lambda, phi)`](../reference/genpois.html): Generalised Poisson distribution parameterised by mean `lambda` and dispersion `phi`
 

@@ -111,8 +111,7 @@ TMB::FreeADFun(obj_insect)
 
 ## ----packages, message = FALSE------------------------------------------------
 library(gamlss.data)   # Data
-# library(LaMa)        # Creating model matrices
-library(mgcv)          # Creating model matrices
+library(LaMa)          # Creating model matrices
 library(Matrix)        # Sparse matrices
 
 ## ----data_boys----------------------------------------------------------------
@@ -125,23 +124,13 @@ dbbmi <- dbbmi[ind, ]
 ## ----creating model matrices--------------------------------------------------
 k <- 10 # Basis dimension
 
-# temporarily replace LaMa wrapper by mgcv setup until LaMa is back on CRAN
-fml <- ~ s(age, bs="cs")
-gam_setup <- gam(update(fml, dummy ~ .), data = cbind(dummy = 1, dbbmi), fit = FALSE)
-gam_setup0 <- gam(update(fml, dummy ~ .), data = cbind(dummy = 1, dbbmi), control = list(maxit = 1))
-X <- gam_setup$X
-S <- Matrix(gam_setup$S[[1]], sparse = TRUE)  # Sparse penalty matrix
-
-# modmat <- make_matrices(~ s(age, bs="cs"), data = dbbmi)
-# X <- modmat$Z                              # Design matrix
-# S <- Matrix(modmat$S[[1]], sparse = TRUE)  # Sparse penalty matrix
+modmat <- make_matrices(~ s(age, bs="cs"), data = dbbmi)
+X <- modmat$Z                              # Design matrix
+S <- Matrix(modmat$S[[1]], sparse = TRUE)  # Sparse penalty matrix
 
 # Prediction design matrix
 x_p <- seq(min(dbbmi$age), max(dbbmi$age), length = 100)
-newdata <- data.frame(age = x_p)
-# X_p <- predict(modmat, newdata = data.frame(age = x_p))
-X_p <- predict.gam(gam_setup0, newdata = cbind(dummy = 1, newdata), 
-                   type = "lpmatrix")
+X_p <- predict(modmat, newdata = data.frame(age = x_p))
 
 idx <- 1:nrow(X)
 X <- rbind(X, X_p) 
