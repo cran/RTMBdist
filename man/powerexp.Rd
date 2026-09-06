@@ -53,11 +53,11 @@ Density, distribution function, quantile function, and random generation for
 the Power Exponential distribution (two versions).
 }
 \details{
-This implementation of the densities and distribution functions allow for automatic differentiation with \code{RTMB} while the other functions are imported from \code{gamlss.dist} package.
+The densities and distribution functions allow for automatic differentiation with \code{RTMB}.
 
 For \code{powerexp}, \code{mu} is the mean and \code{sigma} is the standard deviation while this does not hold for \code{powerexp2}.
 
-See \code{gamlss.dist::\link[gamlss.dist]{PE}} for more details.
+The parameterisation follows the \code{PE} and \code{PE2} families of the \code{gamlss.dist} package.
 
 For \code{powerexp} (PE), \eqn{\sigma} is the standard deviation; the density is
 \deqn{f(x;\,\mu,\sigma,\nu) = \frac{\nu}{2c\,\sigma\,\Gamma(1/\nu)} \exp\!\left(-\tfrac{1}{2}\left|\frac{x-\mu}{c\sigma}\right|^\nu\right),}
@@ -80,6 +80,12 @@ p <- ppowerexp2(x, mu = 0, sigma = 1, nu = 2)
 q <- qpowerexp2(p, mu = 0, sigma = 1, nu = 2)
 }
 \references{
+Nelson, D. B. (1991) Conditional heteroskedasticity in asset returns: a new approach.
+Econometrica, 59, 347-370.
+
 Rigby, R. A., Stasinopoulos, D. M., Heller, G. Z., and De Bastiani, F. (2019) Distributions for modeling location, scale, and shape: Using GAMLSS in R, Chapman and Hall/CRC,
 doi:10.1201/9780429298547. An older version can be found in https://www.gamlss.com/.
+}
+\seealso{
+\link{bcpe}, \link{jsu}, \link{laplace}
 }

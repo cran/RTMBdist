@@ -41,8 +41,8 @@ Density, distribution function, quantile function, and random generation for
 the Box–Cox Cole and Green distribution.
 }
 \details{
-This implementation of \code{dbccg} and \code{pbccg} allows for automatic differentiation with \code{RTMB} while the other functions are imported from \code{gamlss.dist} package.
-See \code{gamlss.dist::\link[gamlss.dist]{BCCG}} for more details.
+\code{dbccg} and \code{pbccg} allow for automatic differentiation with \code{RTMB}.
+The parameterisation follows the \code{BCCG} family of the \code{gamlss.dist} package.
 
 The density is
 \deqn{f(x; \mu, \sigma, \nu) = \frac{x^{\nu-1}}{\mu^{\nu} \sigma \sqrt{2\pi}} \exp\!\left(-\tfrac{z^2}{2}\right) \Bigl[\Phi\!\left(\tfrac{1}{\sigma|\nu|}\right)\Bigr]^{-1}, \quad x > 0,}
@@ -55,6 +55,12 @@ p <- pbccg(x, mu = 10, sigma = 0.2, nu = 0.5)
 q <- qbccg(p, mu = 10, sigma = 0.2, nu = 0.5)
 }
 \references{
+Cole, T. J. and Green, P. J. (1992) Smoothing reference centile curves: the LMS method and penalized likelihood.
+Statistics in Medicine, 11, 1305-1319.
+
 Rigby, R. A., Stasinopoulos, D. M., Heller, G. Z., and De Bastiani, F. (2019) Distributions for modeling location, scale, and shape: Using GAMLSS in R, Chapman and Hall/CRC,
 doi:10.1201/9780429298547. An older version can be found in https://www.gamlss.com/.
+}
+\seealso{
+\link{bct}, \link{bcpe}, \link{gengamma}
 }
