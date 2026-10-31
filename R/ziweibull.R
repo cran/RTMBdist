@@ -9,6 +9,12 @@
 #' \deqn{f(x;\,k,\lambda,p_0) = p_0\,\mathbf{1}[x=0] + (1-p_0)\,f_{\mathrm{Weibull}}(x;\,k,\lambda)\,\mathbf{1}[x>0],}
 #' where \eqn{p_0} is \code{zeroprob}, \eqn{k} = \code{shape}, \eqn{\lambda} = \code{scale}.
 #'
+#' Because the continuous part places no mass at zero, \code{zeroprob} is exactly
+#' \eqn{P(X = 0)}, and zero-inflation coincides with a hurdle model here. The two
+#' constructions only differ for discrete distributions, where the base distribution
+#' can generate zeros of its own. GAMLSS therefore calls distributions of this type
+#' zero-adjusted rather than zero-inflated.
+#'
 #' @param x,q vector of quantiles
 #' @param n number of random values to return
 #' @param shape positive shape parameter
@@ -88,7 +94,7 @@ rziweibull <- function(n, shape, scale, zeroprob = 0) {
   u <- runif(n)
   res <- rep(0, n)
   is_zero <- u < zeroprob
-  res[!is_zero] <- rweibull(sum(!is_zero), shape = shape, scale = scale)
+  res[!is_zero] <- rweibull(sum(!is_zero), shape = rep_len(shape, n)[!is_zero], scale = rep_len(scale, n)[!is_zero])
 
   return(res)
 }

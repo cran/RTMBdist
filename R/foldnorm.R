@@ -8,6 +8,11 @@
 #'
 #' \deqn{f(x;\,\mu,\sigma) = \frac{1}{\sigma\sqrt{2\pi}}\left[\exp\!\left(-\frac{(x-\mu)^2}{2\sigma^2}\right) + \exp\!\left(-\frac{(x+\mu)^2}{2\sigma^2}\right)\right], \quad x \geq 0.}
 #'
+#' With \eqn{\mu = 0} this is the half-normal distribution, the limiting case
+#' of the \link[=halft]{half-t} as its degrees of freedom grow.
+#'
+#' @seealso [halft], [halfcauchy]
+#'
 #' @param x,q vector of quantiles
 #' @param p vector of probabilities
 #' @param n number of random values to return
@@ -70,12 +75,10 @@ pfoldnorm <- function(q, mu = 0, sigma = 1, lower.tail = TRUE, log.p = FALSE) {
   # ensure sigma > 0
   # if (sigma <= 0) stop("sigma must be positive")
 
-  below_zero <- q < 0
-
+  # zero below the support, with an indicator instead of p[q < 0] <- 0, so that p can also
+  # be taped in q (comparisons of AD variables are not allowed)
   denom <- sqrt(2) * sigma
-  p <- 0.5 * (erf((q + mu) / denom) + erf((q - mu) / denom))
-
-  p[below_zero] <- 0
+  p <- 0.5 * (erf((q + mu) / denom) + erf((q - mu) / denom)) * (1 - smaller(q, 0))
 
   if (!lower.tail) p <- 1 - p
   if (log.p) p <- log(p)

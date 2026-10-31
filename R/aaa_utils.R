@@ -5,6 +5,10 @@ dGenericSim <- get("dGenericSim", envir = asNamespace("RTMB"), inherits = FALSE)
 # getting ad_context from RTMB (not exported)
 ad_context <- get("ad_context", envir = asNamespace("RTMB"), inherits = FALSE)
 
+# getting the values of advectors at tape time from RTMB (not exported)
+getValues <- get("getValues", envir = asNamespace("RTMB"), inherits = FALSE)
+value_of <- function(x) if (inherits(x, "advector")) getValues(x) else x
+
 #' AD-compatible error function and complementary error function
 #'
 #' @param x vector of evaluation points
@@ -219,6 +223,16 @@ log_zi <- function(x, logdens, zeroprob) {
     log(isnonzero(x)) + log1p(-zeroprob) + logdens
   )
 }
+# hurdle (zero-altered): the zeros are a free parameter and the positives follow
+# the zero-truncated base distribution. p0 is P(X = 0) under the base distribution.
+# x == 0: zeroprob
+# x > 0: (1 - zeroprob) * pmf(x) / (1 - p0)
+log_hurdle <- function(x, logdens, p0, zeroprob) {
+  RTMB::logspace_add(
+    log(iszero(x)) + log(zeroprob),
+    log(ispos_strict(x)) + log1p(-zeroprob) + logdens - log1p(-p0)
+  )
+}
 # x == 0: p0 + pmf(0)
 # x > 0: (1-p0) * pmf(x)
 log_zi_discrete <- function(x, logdens, zeroprob) {
@@ -249,15 +263,61 @@ inv_boxcox <- function(mu, sigma, nu, z) {
   ifelse(nu != 0, mu * (nu * sigma * z + 1)^(1 / nu), mu * exp(sigma * z))
 }
 
+# log(1 + u) / u, the ratio the generalised extreme value, generalised Pareto
+# and related families need in order to write -log(1 + xi z) / xi as a single
+# expression that stays finite at xi = 0 (where it equals 1).
+#
+# Writing it as a branch on iszero(xi) would give a zero derivative with respect
+# to xi at xi = 0, which is exactly the value people start an optimiser at. Here
+# the small-u branch is a Taylor series, so the derivative at u = 0 is the true
+# one. Neither branch is ever singular: away from zero, usafe is u; near zero,
+# usafe is u + 1, so the division is by a number close to 1 rather than close to
+# 0. Multiplying that finite value by the zero weight gives 0 rather than NaN.
+log1p_over_x <- function(u) {
+  small <- smaller(abs(u), 1e-2) # zero derivative, so it only selects a branch
+  usafe <- u + small
+
+  series <- 1 - u * (1/2 - u * (1/3 - u * (1/4 - u * (1/5 -
+              u * (1/6 - u * (1/7 - u / 8))))))
+
+  (1 - small) * (log1p(usafe) / usafe) + small * series
+}
+
 reggamma <- function(s, x) {
   if (ad_context()) {
     # RTMB's pgamma errors when lower.tail is passed inside an AD context, so
     # the upper tail is formed by complement there; outside AD the direct
     # upper-tail evaluation is kept because it is accurate far into the tail
-    return(1 - pgamma(x, shape = s, scale = 1))
+    return(1 - pgamma_ad(x, s))
   }
 
   pgamma(x, shape = s, scale = 1, lower.tail = FALSE)
+}
+
+# CDF evaluated at a truncation bound, for the truncated families. The bound may
+# be infinite, and then the value of the CDF is the constant 0 or 1 -- but the
+# chain rule does not know that: differentiating F((b - mu) / sigma) at
+# b = Inf multiplies a density that is zero by a derivative that is infinite,
+# so the value comes out right while the gradient comes out NaN. Infinite
+# bounds are therefore replaced by their limit, which carries no derivative at
+# all. `cdf` is the CDF as a function of the bound alone, with the parameters
+# already closed over.
+cdf_at_bound <- function(bound, cdf) {
+  if (inherits(bound, "advector")) return(cdf(bound))
+
+  b <- as.numeric(bound)
+  finite <- is.finite(b)
+  if (all(finite)) return(cdf(bound))
+
+  limit <- as.numeric(b > 0) # 1 at +Inf, 0 at -Inf
+  if (!any(finite)) return(limit)
+
+  # mixed bounds: the infinite entries are evaluated at a dummy value and then
+  # weighted out, so that no infinity ever enters the tape
+  keep <- as.numeric(finite)
+  b[!finite] <- 0
+
+  keep * cdf(b) + (1 - keep) * limit
 }
 
 # Generate helpful error message if user wrote likeliood in wrong order to simulate
@@ -268,4 +328,23 @@ simulation_check <- function(args, exclude = c("x", "log")) {
       "Automatic simulation requires the likelihood to follow the model hierarchy: random effects first, then data given those random effects."
     )
   }
+}
+
+# Angle a wrapped onto [-pi, pi). floor() is re-evaluated with the tape, unlike %%
+wrap_angle <- function(a) a - 2 * pi * floor((a + pi) / (2 * pi))
+
+# Distribution function of a circular distribution that is symmetric about mu, given
+# F0(u), the probability of an angle in [mu - pi, mu + u) for u in [-pi, pi). As in
+# pwrpcauchy, the circle is cut at mu - pi, or at `from` if that is given.
+pcircular <- function(F0, q, mu, from, lower.tail, log.p) {
+  if (is.null(from)) {
+    if (!lower.tail) q <- 2 * mu - q # by symmetry, P(X > q) = P(X < 2 mu - q)
+    p <- F0(wrap_angle(q - mu))
+  } else {
+    p <- F0(wrap_angle(q - mu)) - F0(wrap_angle(from - mu))
+    p <- p - floor(p) # (F(q) - F(from)) mod 1
+    if (!lower.tail) p <- 1 - p
+  }
+  if (log.p) p <- log(p)
+  p
 }

@@ -5,7 +5,7 @@
 \alias{dzilnorm}
 \alias{pzilnorm}
 \alias{rzilnorm}
-\alias{plnorm}
+\alias{plnorm.ad}
 \title{Zero-inflated log normal distribution}
 \usage{
 dzilnorm(x, meanlog = 0, sdlog = 1, zeroprob = 0, log = FALSE)
@@ -15,7 +15,7 @@ pzilnorm(q, meanlog = 0, sdlog = 1, zeroprob = 0,
 
 rzilnorm(n, meanlog = 0, sdlog = 1, zeroprob = 0)
 
-plnorm(q, meanlog = 0, sdlog = 1, lower.tail = TRUE, log.p = FALSE)
+plnorm.ad(q, meanlog = 0, sdlog = 1, lower.tail = TRUE, log.p = FALSE)
 }
 \arguments{
 \item{x, q}{vector of quantiles}
@@ -32,6 +32,10 @@ plnorm(q, meanlog = 0, sdlog = 1, lower.tail = TRUE, log.p = FALSE)
 }
 \value{
 \code{dzilnorm} gives the density, \code{pzilnorm} gives the distribution function, and \code{rzilnorm} generates random deviates.
+
+\code{plnorm.ad} is an AD-compatible replacement for \code{stats::plnorm}. It is used
+internally and is reached automatically whenever an argument is an AD variable,
+so \code{stats::plnorm} is left untouched for ordinary use.
 }
 \description{
 Density, distribution function, and random generation for
@@ -42,6 +46,12 @@ This implementation allows for automatic differentiation with \code{RTMB}.
 
 \deqn{f(x;\,\mu_{\ell},\sigma_\ell,p_0) = p_0\,\mathbf{1}[x=0] + (1-p_0)\,f_{\mathrm{LN}}(x;\,\mu_\ell,\sigma_\ell)\,\mathbf{1}[x>0],}
 where \eqn{p_0} is \code{zeroprob}, \eqn{\mu_\ell} = \code{meanlog}, \eqn{\sigma_\ell} = \code{sdlog}, and \eqn{f_{\mathrm{LN}}} is the log-normal density.
+
+Because the continuous part places no mass at zero, \code{zeroprob} is exactly
+\eqn{P(X = 0)}, and zero-inflation coincides with a hurdle model here. The two
+constructions only differ for discrete distributions, where the base distribution
+can generate zeros of its own. GAMLSS therefore calls distributions of this type
+zero-adjusted rather than zero-inflated.
 }
 \examples{
 x <- rzilnorm(1, 1, 1, 0.5)

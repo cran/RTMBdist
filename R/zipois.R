@@ -65,7 +65,7 @@ pzipois <- function(q, lambda, zeroprob = 0, lower.tail = TRUE, log.p = FALSE) {
     q <- floor(q)  # make sure it's integer-valued
   }
 
-  p <- zeroprob + (1 - zeroprob) * ppois(q, lambda)
+  p <- greater(q, -1) * (zeroprob + (1 - zeroprob) * ppois(q, lambda))
 
   if (!lower.tail) p <- 1 - p
   if (log.p) p <- log(p)
@@ -82,7 +82,7 @@ rzipois <- function(n, lambda, zeroprob = 0) {
   u <- runif(n)
   res <- rep(0, n)
   is_zero <- u < zeroprob
-  res[!is_zero] <- rpois(sum(!is_zero), lambda)
+  res[!is_zero] <- rpois(sum(!is_zero), rep_len(lambda, n)[!is_zero])
 
   return(res)
 }

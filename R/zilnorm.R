@@ -9,6 +9,12 @@
 #' \deqn{f(x;\,\mu_{\ell},\sigma_\ell,p_0) = p_0\,\mathbf{1}[x=0] + (1-p_0)\,f_{\mathrm{LN}}(x;\,\mu_\ell,\sigma_\ell)\,\mathbf{1}[x>0],}
 #' where \eqn{p_0} is \code{zeroprob}, \eqn{\mu_\ell} = \code{meanlog}, \eqn{\sigma_\ell} = \code{sdlog}, and \eqn{f_{\mathrm{LN}}} is the log-normal density.
 #'
+#' Because the continuous part places no mass at zero, \code{zeroprob} is exactly
+#' \eqn{P(X = 0)}, and zero-inflation coincides with a hurdle model here. The two
+#' constructions only differ for discrete distributions, where the base distribution
+#' can generate zeros of its own. GAMLSS therefore calls distributions of this type
+#' zero-adjusted rather than zero-inflated.
+#'
 #' @param x,q vector of quantiles
 #' @param n number of random values to return
 #' @param meanlog,sdlog mean and standard deviation of the distribution on the log scale with default values of 0 and 1 respectively.
@@ -18,6 +24,10 @@
 #'
 #' @return
 #' \code{dzilnorm} gives the density, \code{pzilnorm} gives the distribution function, and \code{rzilnorm} generates random deviates.
+#'
+#' \code{plnorm.ad} is an AD-compatible replacement for \code{stats::plnorm}. It is used
+#' internally and is reached automatically whenever an argument is an AD variable,
+#' so \code{stats::plnorm} is left untouched for ordinary use.
 #'
 #' @examples
 #' x <- rzilnorm(1, 1, 1, 0.5)
@@ -88,7 +98,7 @@ rzilnorm <- function(n, meanlog = 0, sdlog = 1, zeroprob = 0) {
   u <- runif(n)
   res <- rep(0, n)
   is_zero <- u < zeroprob
-  res[!is_zero] <- rlnorm(sum(!is_zero), meanlog = meanlog, sdlog = sdlog)
+  res[!is_zero] <- rlnorm(sum(!is_zero), meanlog = rep_len(meanlog, n)[!is_zero], sdlog = rep_len(sdlog, n)[!is_zero])
 
   return(res)
 }
@@ -96,7 +106,10 @@ rzilnorm <- function(n, meanlog = 0, sdlog = 1, zeroprob = 0) {
 #' @rdname zilnorm
 #' @importFrom RTMB pnorm
 #' @export
-plnorm <- function(q, meanlog = 0, sdlog = 1, lower.tail = TRUE, log.p = FALSE) {
+plnorm.ad <- function(q, meanlog = 0, sdlog = 1, lower.tail = TRUE, log.p = FALSE) {
+  # AD-compatible version of stats::plnorm. It is reached through the internal S4
+  # generic in R/ad-dispatch.R whenever an argument is an advector; plain numeric
+  # input goes to stats::plnorm instead.
   if(!ad_context()) {
     # ensure sdlog > 0
     if (any(sdlog <= 0)) stop("sdlog must be > 0")

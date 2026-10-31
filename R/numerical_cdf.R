@@ -1,0 +1,104 @@
+# Numerical distribution function by integrating a density with RTMB's integrate(),
+# which is AD-compatible from RTMB 2.0 on. Used by p-functions in AD context whose
+# closed-form or package CDF is not AD-compatible, and in the tails outside AD where that
+# CDF is inaccurate (see refine_tails() below).
+#
+# dfun must be AD-compatible, vectorised in its first argument, have a `log` argument and
+# be positive at q. Its parameters are passed as a named list `pars` (a list rather than
+# ..., so that no parameter name can partially match an argument, e.g. df and dfun) and
+# recycled together with q, so each element gets its own integral.
+# To avoid cancellation, the smaller tail is integrated directly: from `lower` to q if
+# q <= centre, and from q to `upper` otherwise, taking the complement if needed.
+# The tail is integrated relative to the density at q, i.e. as f(q) * int f(x) / f(q) dx
+# with the ratio computed on the log scale. The integral is then of order one also far out
+# in the tails, which avoids underflow (subnormal values give NaN derivatives) and keeps
+# log.p accurate where the probability itself underflows.
+# `centre` should be close to the mode, so that the peak of the density sits at an end of
+# the integration range, where the adaptive quadrature resolves it reliably. `scale` sets
+# the unit in which infinite tails are integrated and should be of the order of the spread
+# of the density. Only the values of `centre` and `scale` at tape time are used. The
+# choices they make therefore stay fixed when the tape is re-evaluated at other parameters,
+# which leaves the result correct and only affects numerical accuracy.
+numerical_cdf <- function(dfun, q, pars, centre, scale = 1, lower = -Inf, upper = Inf,
+                          lower.tail = TRUE, log.p = FALSE, rel.tol = 1e-8) {
+  n <- max(length(q), lengths(pars))
+  rec <- function(x) x[(seq_len(n) - 1) %% length(x) + 1]
+  q <- rec(q)
+  pars <- lapply(pars, rec)
+
+  qv <- value_of(q)
+  left <- qv <= rec(value_of(centre))
+  left[is.na(left)] <- TRUE # NA in q, filled in at the end
+  h <- rec(value_of(scale))
+
+  # Log of the integral over the chosen tail for element i. RTMB's AD integrate() can give a
+  # zero derivative with respect to a finite integration limit, so the limits are kept fixed
+  # and q is moved into the integrand instead.
+  # Each element gets its own integrate() call. RTMB's Vectorize() would tape much faster,
+  # but its second derivatives are wrong (or R crashes) when the vectorised function contains
+  # integrate() and is mapped over more than one element (RTMB 2.0), and second and third
+  # derivatives are needed for sdreport() and the Laplace approximation.
+  log_tail <- function(i) {
+    qi <- q[i]
+    hi <- h[i]
+    pars_i <- lapply(pars, `[`, i)
+    logf <- function(x) do.call(dfun, c(list(x), pars_i, list(log = TRUE)))
+    logf_q <- logf(qi)
+    r <- function(x) exp(logf(x) - logf_q)
+    # abs.tol = 0 so that the relative tolerance decides
+    I <- function(g, b) integrate(g, 0, b, rel.tol = rel.tol, abs.tol = 0)$value
+    logf_q + log(
+      if (left[i]) {
+        if (is.infinite(lower)) hi * I(function(v) r(qi - hi * v), Inf)
+        else (qi - lower) * I(function(u) r(lower + u * (qi - lower)), 1)
+      } else {
+        if (is.infinite(upper)) hi * I(function(v) r(qi + hi * v), Inf)
+        else (upper - qi) * I(function(u) r(qi + u * (upper - qi)), 1)
+      }
+    )
+  }
+
+  # infinite q is left out of the integration, its directly integrated tail is empty
+  ls <- rep(-Inf, n)
+  if (ad_context()) ls <- advector(ls)
+  i <- which(is.finite(qv))
+  if (length(i)) ls[i] <- do.call(c, lapply(i, log_tail))
+
+  flip <- left != lower.tail
+  p <- if (log.p) ls else exp(ls)
+  if (any(flip)) p[flip] <- if (log.p) log1p(-exp(ls[flip])) else 1 - exp(ls[flip])
+  if (anyNA(qv)) p[is.na(qv)] <- NA
+  p
+}
+
+# Outside AD, the p-functions use the sn package, which is accurate in the bulk but not in the
+# tails: taking 1 - p cancels in the upper tail, psn is inaccurate in the light tail
+# (relative error 3e-6 at 1e-13, far worse beyond) and pst's far tail approximation for
+# non-integer df (|z| > 30) is off by over 1%. sn's own lower.tail is no help, as it is
+# mostly 1 - p as well and returns the lower tail in some cases. So wherever the requested
+# tail is small or q is far out, the tail is integrated numerically instead, which also gives
+# log.p where the probability underflows.
+# p is sn's lower tail probability, `use` marks elements whose density can be integrated.
+# Extremely far out (around 1e5 scale units and beyond) the integration can fail, and sn's
+# value is kept there.
+refine_tails <- function(p, dfun, q, pars, centre, scale, lower.tail, log.p, use = TRUE) {
+  n <- length(p)
+  rec <- function(x) rep_len(x, n)
+  q <- rec(q)
+  centre <- rec(centre)
+  scale <- rec(scale)
+
+  p <- pmin(pmax(p, 0), 1) # sn can return values just outside [0, 1]
+  out <- if (lower.tail) p else 1 - p
+  if (log.p) out <- log(out)
+
+  pars <- lapply(pars, rec)
+  for (i in which(rec(use) & !is.na(p) & (pmin(p, 1 - p) < 1e-5 | abs(q - centre) / scale > 25))) {
+    v <- tryCatch(numerical_cdf(dfun, q[i], lapply(pars, `[`, i),
+                                centre = centre[i], scale = scale[i],
+                                lower.tail = lower.tail, log.p = log.p),
+                  error = function(e) NA)
+    if (!is.na(v)) out[i] <- v
+  }
+  out
+}

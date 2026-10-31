@@ -8,6 +8,11 @@
 #   3. lower.tail  — p(x, lower.tail=FALSE) == 1 - p(x)
 #   4. normalised  — integral of pdf == 1  /  sum of pmf == 1
 #   5. AD gradient — MakeTape(nll) Jacobian contains no NaN
+#   6. AD CDF      — taped p(x) matches p(x) outside AD in value and gradient
+#   6b. AD Hessian — second derivatives of the taped p(x) match finite differences
+#   5b. cdf vs pdf — p(x) matches the integrated density / summed pmf
+#   7. OSA         — oneStepPredict(method = "cdf") residuals equal qnorm(p(x)),
+#                    for discrete distributions its Fx and px equal p(x) and d(x)
 
 
 #' Check that the AD gradient of a distribution's NLL is free of NaN (test 5)
@@ -55,6 +60,146 @@ check_ad_gradient <- function(.dfun, .rfun, ..., .n = 20, .seed = 42) {
       label = "no NaN in AD gradient"
     )
   }
+}
+
+
+#' Check an AD-compatible distribution function against its non-AD evaluation (test 6)
+#'
+#' Tapes .pfun with respect to the distribution parameters and with respect to
+#' the quantiles, and compares the taped values to .pfun evaluated outside AD,
+#' the parameter Jacobian to central finite differences of .pfun outside AD,
+#' and the derivative with respect to the quantiles to the density .dfun.
+#'
+#' @param .pfun distribution function, e.g. pskewt
+#' @param .dfun density function, e.g. dskewt
+#' @param .q    numeric vector of quantiles
+#' @param ...   named numeric distribution parameters, each of length 1, that are taped
+#' @param .fixed parameters for .pfun and .dfun that are not taped, e.g. list(df = 5)
+#' @param .args further arguments for .pfun only, e.g. list(log.p = TRUE); the derivative
+#'   with respect to .q is only checked when this is empty
+#' @param .tol  tolerance for values and the derivative with respect to .q
+#' @param .grad_tol tolerance for the finite-difference comparison
+#' @param .dq logical; whether to check the derivative with respect to .q, which is
+#'   not meaningful for discrete distributions
+#'
+#' @return the parameter tape, invisibly, for further checks at other parameters
+check_ad_cdf <- function(.pfun, .dfun, .q, ..., .fixed = list(), .args = list(),
+                         .tol = 1e-8, .grad_tol = 1e-6, .dq = TRUE) {
+  par <- unlist(list(...))
+  as_args <- function(p) stats::setNames(lapply(seq_along(par), function(j) p[j]), names(par))
+  call_p <- function(p, x = .q) do.call(.pfun, c(list(x), as_args(p), .fixed, .args))
+
+  F <- RTMB::MakeTape(function(p) call_p(p), par)
+  expect_equal(F(par), call_p(par), tolerance = .tol, label = "taped CDF value")
+
+  h <- 1e-5
+  J_fd <- sapply(seq_along(par), function(j) {
+    e <- replace(numeric(length(par)), j, h)
+    (call_p(par + e) - call_p(par - e)) / (2 * h)
+  })
+  expect_equal(F$jacobian(par), matrix(J_fd, ncol = length(par)),
+               tolerance = .grad_tol, ignore_attr = TRUE, label = "taped CDF gradient")
+
+  if (.dq && length(.args) == 0) {
+    G <- RTMB::MakeTape(function(x) call_p(par, x), .q)
+    expect_equal(diag(G$jacobian(.q)), do.call(.dfun, c(list(.q), list(...), .fixed)),
+                 tolerance = .tol, label = "taped CDF derivative in q")
+  }
+
+  invisible(F)
+}
+
+
+#' Check second derivatives of a distribution function in its parameters (test 6b)
+#'
+#' Compares the Hessian of sum(log(.pfun(.q, ...))) from the AD tape with central
+#' finite differences of its values. Second and third derivatives are needed by
+#' sdreport() and the Laplace approximation, and can be wrong even where the
+#' gradient is right.
+#'
+#' @param .pfun distribution function
+#' @param .q    numeric vector of quantiles, ideally in both tails
+#' @param ...   named numeric distribution parameters, each of length 1
+#' @param .fixed arguments of .pfun that are data rather than parameters
+#' @param .h    step of the finite differences
+#' @param .tol  tolerance of the comparison
+check_ad_cdf_hessian <- function(.pfun, .q, ..., .fixed = list(), .h = 1e-4, .tol = 1e-5) {
+  par <- unlist(list(...))
+  as_args <- function(p) stats::setNames(lapply(seq_along(par), function(j) p[j]), names(par))
+  f <- function(p) sum(log(do.call(.pfun, c(list(.q), as_args(p), .fixed))))
+  H <- RTMB::MakeTape(f, par)$jacfun()$jacobian(par)
+  d <- length(par)
+  H_fd <- outer(seq_len(d), seq_len(d), Vectorize(function(i, j) {
+    ei <- replace(numeric(d), i, .h); ej <- replace(numeric(d), j, .h)
+    (f(par + ei + ej) - f(par + ei - ej) - f(par - ei + ej) + f(par - ei - ej)) / (4 * .h^2)
+  }))
+  expect_equal(H, H_fd, tolerance = .tol, ignore_attr = TRUE, label = "taped CDF Hessian")
+}
+
+
+#' Check OSA residuals of a continuous distribution via its CDF (test 7)
+#'
+#' Builds the negative log-likelihood of .y with .y marked as observations by
+#' RTMB::OBS(), and checks that the residuals of oneStepPredict(method = "cdf")
+#' equal qnorm(.pfun(.y, ...)). Residuals of discrete distributions are
+#' randomised, so for these the predictive distribution function Fx and point
+#' probability px are compared to .pfun(.y, ...) and .dfun(.y, ...) instead.
+#' No fitting is needed, as everything is computed at the parameter values supplied.
+#'
+#' @param .dfun density function, e.g. dskewt
+#' @param .pfun distribution function, e.g. pskewt
+#' @param .y    numeric vector of observations
+#' @param ...   named numeric distribution parameters, each of length 1
+#' @param .fixed arguments of .dfun and .pfun that are data rather than parameters,
+#'   e.g. list(size = 12)
+#' @param .discrete logical; whether the distribution is discrete
+check_osa_cdf <- function(.dfun, .pfun, .y, ..., .fixed = list(), .discrete = FALSE) {
+  dat <- list(y = .y)
+  fn <- function(par) {
+    RTMB::getAll(par, dat)
+    y <- RTMB::OBS(y)
+    -sum(do.call(.dfun, c(list(y), par, .fixed, list(log = TRUE))))
+  }
+  obj <- RTMB::MakeADFun(fn, list(...), silent = TRUE)
+  res <- RTMB::oneStepPredict(obj, method = "cdf", discrete = .discrete, trace = FALSE)
+  F <- do.call(.pfun, c(list(.y), list(...), .fixed))
+  if (.discrete) {
+    expect_equal(res$Fx, F, tolerance = 1e-8, label = "OSA Fx")
+    expect_equal(res$px, do.call(.dfun, c(list(.y), list(...), .fixed)), tolerance = 1e-8, label = "OSA px")
+    expect_false(any(is.nan(res$residual)), label = "no NaN in OSA residuals")
+  } else {
+    expect_equal(res$residual, stats::qnorm(F), tolerance = 1e-6, label = "OSA residuals")
+  }
+}
+
+
+#' Check that a distribution function matches its density (test 5b)
+#'
+#' Compares p(b) - p(a) with the integral of the density over [a, b] for the
+#' sorted test points, starting at `.from`, where the distribution function has
+#' to equal `.p_from`. Differences are used rather than p(x) itself, so that the
+#' check also applies with a point mass at `.from`, where p(.from) = d(.from).
+#'
+#' @param .dfun,.pfun density and distribution function
+#' @param .xs         test points inside the continuous support
+#' @param .from       start of the continuous support
+#' @param .p_from     value of the distribution function at `.from`
+#' @param ...         named distribution parameters
+#'
+#' @note Arguments use a leading dot so that parameter names such as df cannot
+#'   partially match them (df would otherwise match dfun).
+check_cdf_matches_density <- function(.dfun, .pfun, .xs, .from, .p_from, ...) {
+  pars <- list(...)
+  x <- c(.from, sort(unique(.xs)))
+  f <- function(t) do.call(.dfun, c(list(t), pars))
+  integrals <- vapply(seq_along(x)[-1], function(i)
+    stats::integrate(f, x[i - 1], x[i], rel.tol = 1e-10)$value, numeric(1))
+  expect_equal(
+    do.call(.pfun, c(list(x[-1]), pars)),
+    .p_from + cumsum(integrals),
+    tolerance = 1e-7,
+    label = "cdf matches the integrated density"
+  )
 }
 
 
@@ -112,6 +257,9 @@ check_continuous_dist <- function(dfun, pfun, qfun = NULL,
     tolerance = 1e-4,
     label = "density integrates to 1"
   )
+
+  # 5b. cdf matches the integrated density ------------------------------------
+  check_cdf_matches_density(dfun, pfun, xs, lower, 0, ...)
 }
 
 
@@ -157,6 +305,10 @@ check_zeroinfl_dist <- function(dfun, pfun, xs, upper = Inf, ...) {
     tolerance = 1e-4,
     label = "point mass d(0) + continuous integral = 1"
   )
+
+  # 5b. cdf is the point mass at 0 plus the integrated density ----------------
+  expect_equal(pfun(0, ...), dfun(0, ...), tolerance = 1e-10, label = "p(0) = d(0)")
+  check_cdf_matches_density(dfun, pfun, xs, 0, dfun(0, ...), ...)
 }
 
 
@@ -207,6 +359,13 @@ check_inflated_dist <- function(dfun, pfun, xs,
     tolerance = 1e-4,
     label = "sum of point masses + continuous integral = 1"
   )
+
+  # 5b. cdf is the mass at the lower end plus the integrated density ----------
+  p_lower <- if (lower %in% point_masses) dfun(lower, ...) else 0
+  if (lower %in% point_masses) {
+    expect_equal(pfun(lower, ...), p_lower, tolerance = 1e-10, label = "p(lower) = d(lower)")
+  }
+  check_cdf_matches_density(dfun, pfun, xs, lower, p_lower, ...)
 }
 
 
@@ -252,4 +411,16 @@ check_discrete_dist <- function(dfun, pfun = NULL,
     tolerance = 1e-5,
     label = "PMF sums to 1 over support"
   )
+
+  # 5b. cdf matches the summed pmf ------------------------------------------------
+  if (!is.null(pfun)) {
+    k <- sort(unique(xs_int))
+    support <- sum_support[sum_support >= min(0, sum_support)]
+    expect_equal(
+      pfun(k, ...),
+      vapply(k, function(kk) sum(dfun(support[support <= kk], ...)), numeric(1)),
+      tolerance = 1e-8,
+      label = "cdf matches the summed pmf"
+    )
+  }
 }

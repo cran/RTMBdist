@@ -341,164 +341,222 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 
-<div id="background" class="section level2">
-<h2>Background</h2>
-<p>RTMBdist provides additional probability distributions that work
-inside <code>RTMB::MakeTape</code> for automatic differentiation (AD).
-RTMB records a computation tape by operator overloading: every
-arithmetic operation on an <code>advector</code> is intercepted. All
-code must therefore be plain R arithmetic — anything that drops below R
-to compiled C++ is invisible to the tape. This is why built-in
-distributions such as <code>dgamma</code> must be called as
-<code>RTMB::dgamma</code>, not <code>stats::dgamma</code>, and why
-<code>@import RTMB</code> is needed whenever a function uses
-mathematical operations (<code>exp</code>, <code>log</code>,
-<code>sqrt</code>, etc.).</p>
-<p>Every density function must support three modes:</p>
-<ol style="list-style-type: decimal">
-<li><strong>Plain R evaluation</strong> — standard use outside of
-RTMB.</li>
-<li><strong>AD tape recording</strong> — called with an
-<code>advector</code>; gradients must flow.</li>
-<li><strong>Simulation and OSA residuals</strong> — called with a
-<code>simref</code> or <code>osa</code> object.</li>
-</ol>
+<p>A new distribution is one R file, one test file, and one line in the
+distribution list. The complete example below is meant to be copied; the
+sections after it cover the cases it does not.</p>
+<div id="calling-other-distributions" class="section level2">
+<h2>Calling other distributions</h2>
+<p><code>RTMB</code> records a computation tape by operator overloading,
+so a density has to be ordinary R arithmetic on whatever it is
+handed.</p>
+<p>That is less restrictive than it sounds. <code>RTMB</code> promotes
+around 37 <code>stats</code> functions (<code>dnorm</code>,
+<code>dgamma</code>, <code>pbeta</code>, <code>lgamma</code>,
+<code>besselK</code> and so on) to S4 generics with a method for AD
+variables, so you can just write the bare name. With
+<code>@import RTMB</code> on your function,
+<code>dgamma(x, shape)</code> dispatches on its arguments: ordinary
+numbers get the usual <code>stats</code> behaviour, AD variables get the
+tape-aware method.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>logdens <span class="ot">&lt;-</span> <span class="fu">dgamma</span>(x, <span class="at">shape =</span> shape, <span class="at">scale =</span> scale, <span class="at">log =</span> <span class="cn">TRUE</span>)   <span class="co"># yes</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>logdens <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">dgamma</span>(x, shape, scale, <span class="at">log =</span> <span class="cn">TRUE</span>)            <span class="co"># no - breaks taping</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>logdens <span class="ot">&lt;-</span> RTMB<span class="sc">::</span><span class="fu">dgamma</span>(x, shape, scale, <span class="at">log =</span> <span class="cn">TRUE</span>)             <span class="co"># unnecessary</span></span></code></pre></div>
+<p><code>stats::</code> pins the non-AD version and the tape breaks.
+<code>RTMB::</code> works, but it is noise and it hides the
+dispatch.</p>
+<p>For a function <code>RTMB</code> does not cover, see <a href="#when-rtmb-has-no-ad-version">When <code>RTMB</code> has no AD
+version</a>.</p>
 </div>
-<div id="what-to-implement" class="section level2">
-<h2>What to implement</h2>
-<p>At minimum, provide a <strong>density</strong>
-(<code>d&lt;dist&gt;</code>) and a <strong>random-number
-generator</strong> (<code>r&lt;dist&gt;</code>). A <strong>CDF</strong>
-(<code>p&lt;dist&gt;</code>) and <strong>quantile function</strong>
-(<code>q&lt;dist&gt;</code>) are strongly preferred; they are required
-for OSA residuals and quantile-based tests. All four functions must be
-pure R arithmetic.</p>
+<div id="a-complete-example" class="section level2">
+<h2>A complete example</h2>
+<p>This is the whole of <code>R/foo.R</code>, for a one-parameter
+distribution with density on .</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co">#&#39; Foo distribution</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co">#&#39;</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&#39; Density, distribution function, quantile function, and random generation</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&#39; for the Foo distribution.</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&#39;</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&#39; @details</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&#39; The Foo distribution with rate \eqn{\theta &gt; 0} has density</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&#39; \deqn{f(x;\,\theta) = \theta e^{-\theta x}, \quad x \ge 0.}</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&#39;</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&#39; @param x,q vector of quantiles</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&#39; @param p vector of probabilities</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&#39; @param n number of random values to return</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&#39; @param theta positive rate parameter</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&#39; @param log,log.p logical; if \code{TRUE}, probabilities/ densities are returned as \eqn{\log(p)}.</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&#39; @param lower.tail logical; if \code{TRUE} (default), probabilities are \eqn{P[X \le x]}, otherwise \eqn{P[X &gt; x]}.</span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&#39;</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co">#&#39; @return</span></span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#&#39; \code{dfoo} gives the density, \code{pfoo} gives the distribution function,</span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&#39; \code{qfoo} gives the quantile function, and \code{rfoo} generates random deviates.</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&#39;</span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&#39; @examples</span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="co">#&#39; set.seed(123)</span></span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="co">#&#39; x &lt;- rfoo(5, theta = 2)</span></span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a><span class="co">#&#39; d &lt;- dfoo(x, theta = 2)</span></span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="co">#&#39; p &lt;- pfoo(x, theta = 2)</span></span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co">#&#39; q &lt;- qfoo(p, theta = 2)</span></span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="co">#&#39; @name foo</span></span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="cn">NULL</span></span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a></span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co">#&#39; @rdname foo</span></span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="co">#&#39; @export</span></span>
+<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a><span class="co">#&#39; @import RTMB</span></span>
+<span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a>dfoo <span class="ot">&lt;-</span> <span class="cf">function</span>(x, theta, <span class="at">log =</span> <span class="cn">FALSE</span>) {</span>
+<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a></span>
+<span id="cb2-35"><a href="#cb2-35" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">ad_context</span>()) {</span>
+<span id="cb2-36"><a href="#cb2-36" tabindex="-1"></a>    args <span class="ot">&lt;-</span> <span class="fu">as.list</span>(<span class="fu">environment</span>())</span>
+<span id="cb2-37"><a href="#cb2-37" tabindex="-1"></a>    <span class="fu">simulation_check</span>(args)   <span class="co"># informative error if the likelihood is written in the wrong order</span></span>
+<span id="cb2-38"><a href="#cb2-38" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">any</span>(theta <span class="sc">&lt;=</span> <span class="dv">0</span>)) <span class="fu">stop</span>(<span class="st">&quot;theta must be &gt; 0&quot;</span>)</span>
+<span id="cb2-39"><a href="#cb2-39" tabindex="-1"></a>  }</span>
+<span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a></span>
+<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a>  <span class="co"># potentially escape to RNG or CDF</span></span>
+<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">inherits</span>(x, <span class="st">&quot;simref&quot;</span>)) <span class="fu">return</span>(<span class="fu">dGenericSim</span>(<span class="st">&quot;dfoo&quot;</span>, <span class="at">x =</span> x, <span class="at">theta =</span> theta, <span class="at">log =</span> log))</span>
+<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">inherits</span>(x, <span class="st">&quot;osa&quot;</span>))    <span class="fu">return</span>(<span class="fu">dGenericOSA</span>(<span class="st">&quot;dfoo&quot;</span>, <span class="at">x =</span> x, <span class="at">theta =</span> theta, <span class="at">log =</span> log))</span>
+<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a></span>
+<span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a>  logdens <span class="ot">&lt;-</span> <span class="fu">log</span>(theta) <span class="sc">-</span> theta <span class="sc">*</span> x <span class="sc">+</span> <span class="fu">log</span>(<span class="dv">1</span> <span class="sc">-</span> <span class="fu">smaller</span>(x, <span class="dv">0</span>))   <span class="co"># 0 outside x &gt;= 0</span></span>
+<span id="cb2-46"><a href="#cb2-46" tabindex="-1"></a></span>
+<span id="cb2-47"><a href="#cb2-47" tabindex="-1"></a>  <span class="cf">if</span> (log) <span class="fu">return</span>(logdens)</span>
+<span id="cb2-48"><a href="#cb2-48" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">exp</span>(logdens))</span>
+<span id="cb2-49"><a href="#cb2-49" tabindex="-1"></a>}</span>
+<span id="cb2-50"><a href="#cb2-50" tabindex="-1"></a></span>
+<span id="cb2-51"><a href="#cb2-51" tabindex="-1"></a><span class="co">#&#39; @rdname foo</span></span>
+<span id="cb2-52"><a href="#cb2-52" tabindex="-1"></a><span class="co">#&#39; @export</span></span>
+<span id="cb2-53"><a href="#cb2-53" tabindex="-1"></a>pfoo <span class="ot">&lt;-</span> <span class="cf">function</span>(q, theta, <span class="at">lower.tail =</span> <span class="cn">TRUE</span>, <span class="at">log.p =</span> <span class="cn">FALSE</span>) {</span>
+<span id="cb2-54"><a href="#cb2-54" tabindex="-1"></a></span>
+<span id="cb2-55"><a href="#cb2-55" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">ad_context</span>()) {</span>
+<span id="cb2-56"><a href="#cb2-56" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">any</span>(theta <span class="sc">&lt;=</span> <span class="dv">0</span>)) <span class="fu">stop</span>(<span class="st">&quot;theta must be &gt; 0&quot;</span>)</span>
+<span id="cb2-57"><a href="#cb2-57" tabindex="-1"></a>  }</span>
+<span id="cb2-58"><a href="#cb2-58" tabindex="-1"></a></span>
+<span id="cb2-59"><a href="#cb2-59" tabindex="-1"></a>  p <span class="ot">&lt;-</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="fu">smaller</span>(q, <span class="dv">0</span>)) <span class="sc">*</span> (<span class="sc">-</span><span class="fu">expm1</span>(<span class="sc">-</span>theta <span class="sc">*</span> q))</span>
+<span id="cb2-60"><a href="#cb2-60" tabindex="-1"></a></span>
+<span id="cb2-61"><a href="#cb2-61" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span>lower.tail) p <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> p</span>
+<span id="cb2-62"><a href="#cb2-62" tabindex="-1"></a>  <span class="cf">if</span> (log.p) p <span class="ot">&lt;-</span> <span class="fu">log</span>(p)</span>
+<span id="cb2-63"><a href="#cb2-63" tabindex="-1"></a>  <span class="fu">return</span>(p)</span>
+<span id="cb2-64"><a href="#cb2-64" tabindex="-1"></a>}</span>
+<span id="cb2-65"><a href="#cb2-65" tabindex="-1"></a></span>
+<span id="cb2-66"><a href="#cb2-66" tabindex="-1"></a><span class="co">#&#39; @rdname foo</span></span>
+<span id="cb2-67"><a href="#cb2-67" tabindex="-1"></a><span class="co">#&#39; @export</span></span>
+<span id="cb2-68"><a href="#cb2-68" tabindex="-1"></a>qfoo <span class="ot">&lt;-</span> <span class="cf">function</span>(p, theta, <span class="at">lower.tail =</span> <span class="cn">TRUE</span>, <span class="at">log.p =</span> <span class="cn">FALSE</span>) {</span>
+<span id="cb2-69"><a href="#cb2-69" tabindex="-1"></a></span>
+<span id="cb2-70"><a href="#cb2-70" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">ad_context</span>()) {</span>
+<span id="cb2-71"><a href="#cb2-71" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">any</span>(theta <span class="sc">&lt;=</span> <span class="dv">0</span>)) <span class="fu">stop</span>(<span class="st">&quot;theta must be &gt; 0&quot;</span>)</span>
+<span id="cb2-72"><a href="#cb2-72" tabindex="-1"></a>  }</span>
+<span id="cb2-73"><a href="#cb2-73" tabindex="-1"></a></span>
+<span id="cb2-74"><a href="#cb2-74" tabindex="-1"></a>  <span class="cf">if</span> (log.p) p <span class="ot">&lt;-</span> <span class="fu">exp</span>(p)          <span class="co"># undo the transformations first ...</span></span>
+<span id="cb2-75"><a href="#cb2-75" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span>lower.tail) p <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> p     <span class="co"># ... in the reverse order to pfoo</span></span>
+<span id="cb2-76"><a href="#cb2-76" tabindex="-1"></a></span>
+<span id="cb2-77"><a href="#cb2-77" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">ad_context</span>()) {</span>
+<span id="cb2-78"><a href="#cb2-78" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">any</span>(p <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">|</span> p <span class="sc">&gt;</span> <span class="dv">1</span>)) <span class="fu">stop</span>(<span class="st">&quot;p must be in [0, 1]&quot;</span>)</span>
+<span id="cb2-79"><a href="#cb2-79" tabindex="-1"></a>  }</span>
+<span id="cb2-80"><a href="#cb2-80" tabindex="-1"></a></span>
+<span id="cb2-81"><a href="#cb2-81" tabindex="-1"></a>  <span class="sc">-</span><span class="fu">log1p</span>(<span class="sc">-</span>p) <span class="sc">/</span> theta</span>
+<span id="cb2-82"><a href="#cb2-82" tabindex="-1"></a>}</span>
+<span id="cb2-83"><a href="#cb2-83" tabindex="-1"></a></span>
+<span id="cb2-84"><a href="#cb2-84" tabindex="-1"></a><span class="co">#&#39; @rdname foo</span></span>
+<span id="cb2-85"><a href="#cb2-85" tabindex="-1"></a><span class="co">#&#39; @export</span></span>
+<span id="cb2-86"><a href="#cb2-86" tabindex="-1"></a><span class="co">#&#39; @importFrom stats runif</span></span>
+<span id="cb2-87"><a href="#cb2-87" tabindex="-1"></a>rfoo <span class="ot">&lt;-</span> <span class="cf">function</span>(n, theta) {</span>
+<span id="cb2-88"><a href="#cb2-88" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">any</span>(theta <span class="sc">&lt;=</span> <span class="dv">0</span>)) <span class="fu">stop</span>(<span class="st">&quot;theta must be &gt; 0&quot;</span>)</span>
+<span id="cb2-89"><a href="#cb2-89" tabindex="-1"></a></span>
+<span id="cb2-90"><a href="#cb2-90" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="fu">ceiling</span>(n)</span>
+<span id="cb2-91"><a href="#cb2-91" tabindex="-1"></a>  <span class="fu">qfoo</span>(<span class="fu">runif</span>(n), theta)</span>
+<span id="cb2-92"><a href="#cb2-92" tabindex="-1"></a>}</span></code></pre></div>
+<p>Five details in there are easy to get wrong:</p>
+<ul>
+<li>Validation and <code>simulation_check</code> belong inside
+<code>if (!ad_context())</code>. On AD variables they either fail or
+give the wrong answer.</li>
+<li>The string passed to
+<code>dGenericSim</code>/<code>dGenericOSA</code> has to match the
+function name exactly. <code>RTMB</code> uses it to find your
+<code>p</code> and <code>r</code> functions.</li>
+<li>Work in log space and call <code>exp()</code> once, at the end.</li>
+<li>Check <code>p</code> after undoing <code>log.p</code> and
+<code>lower.tail</code>, not before. Checking first makes
+<code>log.p = TRUE</code> impossible, since <code>log(p)</code> is
+negative.</li>
+<li>Match the support indicator to the boundary. Foo has support , so
+<code>1 - smaller(x, 0)</code> is right. <code>greater(x, 0)</code> is 0
+at <code>x = 0</code> and would give a density of 0 there instead of
+.</li>
+</ul>
+<p>Then the test file, and one bullet in
+<code>vignettes/distlist.Rmd</code>:</p>
+<pre><code>* [`foo(theta)`](../reference/foo.html): Foo distribution parameterised by rate `theta`</code></pre>
 </div>
-<div id="naming-conventions" class="section level2">
-<h2>Naming conventions</h2>
-<p>Follow the
-<code>d</code>/<code>p</code>/<code>q</code>/<code>r</code> prefix
-convention. Spell out distribution names rather than abbreviating —
-<code>gompertz</code>, <code>invgamma</code>, <code>laplace</code> —
-unless the name becomes unwieldy. Reparameterised variants take a
-<code>2</code> suffix: <code>beta2</code>, <code>gamma2</code>.</p>
-</div>
-<div id="files-to-create-or-modify" class="section level2">
-<h2>Files to create or modify</h2>
+<div id="tests" class="section level2">
+<h2>Tests</h2>
+<p><code>tests/testthat/test-foo.R</code>. Two parameter settings plus a
+gradient check is the minimum.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">test_that</span>(<span class="st">&quot;foo passes standard distribution checks (theta = 1)&quot;</span>, {</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="fu">check_continuous_dist</span>(dfoo, pfoo, qfoo, <span class="at">xs =</span> <span class="fu">c</span>(<span class="fl">0.2</span>, <span class="fl">0.5</span>, <span class="dv">1</span>, <span class="dv">2</span>),</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>                        <span class="at">lower =</span> <span class="dv">0</span>, <span class="at">upper =</span> <span class="cn">Inf</span>, <span class="at">theta =</span> <span class="dv">1</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>})</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="fu">test_that</span>(<span class="st">&quot;foo AD gradient has no NaN&quot;</span>, {</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="fu">check_ad_gradient</span>(dfoo, rfoo, <span class="at">theta =</span> <span class="dv">1</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>})</span></code></pre></div>
 <table>
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
 <thead>
 <tr class="header">
-<th>File</th>
-<th>What to do</th>
+<th>Your distribution is</th>
+<th>Use</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>R/&lt;dist&gt;.R</code></td>
-<td>implement <code>d</code>, <code>p</code>, <code>q</code>,
-<code>r</code> functions</td>
+<td>continuous</td>
+<td><code>check_continuous_dist(dfun, pfun, qfun, xs, lower, upper, ...)</code></td>
 </tr>
 <tr class="even">
-<td><code>tests/testthat/test-&lt;dist&gt;.R</code></td>
-<td>add standard tests</td>
+<td>continuous, no quantile function</td>
+<td>same, with <code>qfun = NULL</code></td>
 </tr>
 <tr class="odd">
-<td><code>vignettes/distlist.Rmd</code></td>
-<td>add one bullet in alphabetical order</td>
+<td>discrete</td>
+<td><code>check_discrete_dist(dfun, pfun, xs_int, sum_support, ...)</code></td>
+</tr>
+<tr class="even">
+<td>discrete, no cdf</td>
+<td>same, with <code>pfun = NULL</code></td>
+</tr>
+<tr class="odd">
+<td>zero-inflated continuous</td>
+<td><code>check_zeroinfl_dist</code></td>
+</tr>
+<tr class="even">
+<td>inflated at 0 and/or 1</td>
+<td><code>check_inflated_dist</code></td>
+</tr>
+<tr class="odd">
+<td>AD-compatible cdf</td>
+<td>also <code>check_ad_cdf(pfun, dfun, q, ...)</code>, with
+<code>.dq = FALSE</code> if discrete</td>
+</tr>
+<tr class="even">
+<td>OSA residuals</td>
+<td>also <code>check_osa_cdf(dfun, pfun, y, ...)</code>, with
+<code>.discrete = TRUE</code> if discrete</td>
 </tr>
 </tbody>
 </table>
-<hr />
-</div>
-<div id="implementing-the-density-function" class="section level2">
-<h2>Implementing the density function</h2>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>dfoo <span class="ot">&lt;-</span> <span class="cf">function</span>(x, theta1, <span class="at">theta2 =</span> <span class="dv">1</span>, <span class="at">log =</span> <span class="cn">FALSE</span>) {</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  <span class="co"># 1. Validate inputs — skip during AD recording</span></span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">ad_context</span>()) {</span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>    args <span class="ot">&lt;-</span> <span class="fu">as.list</span>(<span class="fu">environment</span>())</span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>    <span class="fu">simulation_check</span>(args)           <span class="co"># catches likelihood written in wrong order</span></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">any</span>(theta1 <span class="sc">&lt;=</span> <span class="dv">0</span>)) <span class="fu">stop</span>(<span class="st">&quot;theta1 must be positive&quot;</span>)</span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>  }</span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a></span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>  <span class="co"># 2. Simulation and OSA escapes</span></span>
-<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">inherits</span>(x, <span class="st">&quot;simref&quot;</span>))</span>
-<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">dGenericSim</span>(<span class="st">&quot;dfoo&quot;</span>, <span class="at">x =</span> x, <span class="at">theta1 =</span> theta1, <span class="at">theta2 =</span> theta2, <span class="at">log =</span> log))</span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">inherits</span>(x, <span class="st">&quot;osa&quot;</span>))</span>
-<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">dGenericOSA</span>(<span class="st">&quot;dfoo&quot;</span>, <span class="at">x =</span> x, <span class="at">theta1 =</span> theta1, <span class="at">theta2 =</span> theta2, <span class="at">log =</span> log))</span>
-<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a></span>
-<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a>  <span class="co"># 3. Log-density</span></span>
-<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a>  logdens <span class="ot">&lt;-</span> ...</span>
-<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a></span>
-<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a>  <span class="cf">if</span> (log) <span class="fu">return</span>(logdens)</span>
-<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a>  <span class="fu">exp</span>(logdens)</span>
-<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a>}</span></code></pre></div>
-<p>A few rules:</p>
-<ul>
-<li>Always compute in log space and only call <code>exp()</code> at the
-very end.</li>
-<li>The string passed to
-<code>dGenericSim</code>/<code>dGenericOSA</code> must exactly match the
-function name, because RTMB uses it to look up the corresponding
-<code>p&lt;dist&gt;</code> or <code>r&lt;dist&gt;</code>.</li>
-<li>Parameter validation and <code>simulation_check</code> must be
-inside the <code>if (!ad_context())</code> guard — they would fail or
-give wrong results on <code>advector</code> inputs.</li>
-</ul>
-</div>
-<div id="implementing-the-cdf" class="section level2">
-<h2>Implementing the CDF</h2>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>pfoo <span class="ot">&lt;-</span> <span class="cf">function</span>(q, theta1, <span class="at">theta2 =</span> <span class="dv">1</span>, <span class="at">lower.tail =</span> <span class="cn">TRUE</span>, <span class="at">log.p =</span> <span class="cn">FALSE</span>) {</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">ad_context</span>()) {</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">any</span>(theta1 <span class="sc">&lt;=</span> <span class="dv">0</span>)) <span class="fu">stop</span>(<span class="st">&quot;theta1 must be positive&quot;</span>)</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  }</span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a></span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  p <span class="ot">&lt;-</span> ...   <span class="co"># compute CDF using RTMB:: functions where needed</span></span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a></span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span>lower.tail) p <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> p</span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>  <span class="cf">if</span> (log.p) p <span class="ot">&lt;-</span> <span class="fu">log</span>(p)</span>
-<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>  p</span>
-<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>}</span></code></pre></div>
-<p>No <code>simulation_check</code> is needed in
-<code>p&lt;dist&gt;</code>. Apply <code>lower.tail</code> and
-<code>log.p</code> at the end, in that order.</p>
-</div>
-<div id="implementing-the-quantile-function" class="section level2">
-<h2>Implementing the quantile function</h2>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>qfoo <span class="ot">&lt;-</span> <span class="cf">function</span>(p, theta1, <span class="at">theta2 =</span> <span class="dv">1</span>, <span class="at">lower.tail =</span> <span class="cn">TRUE</span>, <span class="at">log.p =</span> <span class="cn">FALSE</span>) {</span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">ad_context</span>()) {</span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">any</span>(theta1 <span class="sc">&lt;=</span> <span class="dv">0</span>)) <span class="fu">stop</span>(<span class="st">&quot;theta1 must be positive&quot;</span>)</span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  }</span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="cf">if</span> (log.p) p <span class="ot">&lt;-</span> <span class="fu">exp</span>(p)          <span class="co"># undo transformations first ...</span></span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span>lower.tail) p <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> p     <span class="co"># ... in the reverse order of pfoo</span></span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a></span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  ...   <span class="co"># compute quantile</span></span>
-<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>}</span></code></pre></div>
-</div>
-<div id="implementing-the-rng" class="section level2">
-<h2>Implementing the RNG</h2>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>rfoo <span class="ot">&lt;-</span> <span class="cf">function</span>(n, theta1, <span class="at">theta2 =</span> <span class="dv">1</span>) {</span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">any</span>(theta1 <span class="sc">&lt;=</span> <span class="dv">0</span>)) <span class="fu">stop</span>(<span class="st">&quot;theta1 must be positive&quot;</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  ...</span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>}</span></code></pre></div>
-<p>The RNG is never called during AD, so no <code>ad_context()</code>
-guard is needed. Two common approaches:</p>
-<ul>
-<li><strong>Inversion</strong>:
-<code>qfoo(runif(n), theta1, theta2)</code> — works whenever
-<code>q&lt;dist&gt;</code> exists.</li>
-<li><strong>Direct formula</strong>: use a known relationship to a base
-distribution, e.g. <code>log(1 + rexp(n, rate = eta)) / b</code> for the
-Gompertz distribution.</li>
-</ul>
-<hr />
+<p>Choose <code>xs</code> so <code>pfoo(xs)</code> stays away from 0 and
+1 — the <code>q(p(x))</code> round-trip cannot recover <code>x</code>
+once the cdf saturates in double precision.</p>
 </div>
 <div id="numerical-stability" class="section level2">
 <h2>Numerical stability</h2>
-<p>Prefer numerically stable forms whenever the argument may be close to
-zero:</p>
 <table>
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
 <thead>
 <tr class="header">
 <th>Instead of</th>
@@ -523,162 +581,180 @@ zero:</p>
 <td><code>x * x</code>, <code>x * x * x</code></td>
 </tr>
 <tr class="odd">
-<td><code>x^a</code> (non-integer exponent)</td>
+<td><code>x^a</code>, non-integer <code>a</code></td>
 <td><code>exp(a * log(x))</code></td>
+</tr>
+<tr class="even">
+<td><code>log(pnorm(x))</code></td>
+<td><code>pnorm(x, log.p = TRUE)</code>, accurate where
+<code>pnorm(x)</code> underflows</td>
 </tr>
 </tbody>
 </table>
-<p>Avoid expressions that produce <code>0 * (-Inf)</code> — this
-evaluates to <code>NaN</code> and kills the gradient. Common fixes:</p>
-<ul>
-<li>Add a small offset before taking a log:
-<code>log(x + .Machine$double.xmin)</code>.</li>
-<li>Clamp a log term that can hit <code>-Inf</code> at a boundary:
-<code>as.finite(log(...))</code>.</li>
-</ul>
+<p>The one to watch for is <code>0 * (-Inf)</code>. That is
+<code>NaN</code>, and it takes out the whole gradient rather than the
+single element you were multiplying. It shows up when an indicator
+multiplies a log that is <code>-Inf</code> outside the support. Either
+put the indicator inside the log,</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>logdens <span class="sc">+</span> <span class="fu">log</span>(<span class="fu">greater</span>(x, <span class="dv">0</span>))      <span class="co"># rather than greater(x, 0) * logdens</span></span></code></pre></div>
+<p>or clamp with <code>as.finite()</code>, or offset the argument with
+<code>log(x + .Machine$double.xmin)</code>.</p>
 </div>
-<div id="conditional-logic" class="section level2">
-<h2>Conditional logic</h2>
-<p>Never branch on the value of <code>x</code> inside the tape with
-plain <code>if/else</code> or <code>ifelse</code> — the condition is not
-recorded and the gradient will be wrong. Use the smooth indicator
-helpers from <code>aaa_utils.R</code> instead:</p>
+<div id="branching-without-breaking-the-tape" class="section level2">
+<h2>Branching without breaking the tape</h2>
+<p><code>if</code>/<code>else</code> and <code>ifelse()</code> on a
+taped value do not work: the branch is never recorded. Use the
+arithmetic indicators, which carry gradients.</p>
 <table>
 <thead>
 <tr class="header">
 <th>Helper</th>
-<th>Meaning</th>
+<th>Returns 1 when</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td><code>iszero(x)</code></td>
-<td>1 if x == 0, else 0</td>
+<td><code>x == 0</code></td>
 </tr>
 <tr class="even">
 <td><code>isnonzero(x)</code></td>
-<td>1 if x != 0, else 0</td>
+<td><code>x != 0</code></td>
 </tr>
 <tr class="odd">
-<td><code>ispos(x)</code></td>
-<td>1 if x &gt;= 0, else 0</td>
+<td><code>ispos(x)</code>, <code>ispos_strict(x)</code></td>
+<td><code>x &gt; 0</code> (note: <strong>0 at
+<code>x = 0</code></strong>)</td>
 </tr>
 <tr class="even">
 <td><code>isneg(x)</code></td>
-<td>1 if x &lt; 0, else 0</td>
+<td><code>x &lt; 0</code></td>
+</tr>
+<tr class="odd">
+<td><code>greater(x, val)</code></td>
+<td><code>x &gt; val</code></td>
+</tr>
+<tr class="even">
+<td><code>smaller(x, val)</code></td>
+<td><code>x &lt; val</code></td>
 </tr>
 </tbody>
 </table>
-<p>These are defined as pure arithmetic and propagate gradients
-correctly. Look distributions already implemented to see how to use
-this.</p>
-<hr />
+<p><code>pmax.ad()</code> and <code>pmin.ad()</code> are the tape-safe
+<code>pmax</code>/<code>pmin</code>.</p>
+<p>Outside a tape, <code>if (any(...)) stop(...)</code> is fine. That is
+what the <code>!ad_context()</code> guard is for.</p>
+<p>One more thing about <code>ifelse()</code>, even where it is
+legitimate: its result takes the length of the <em>test</em>. If the
+test is a parameter shorter than <code>x</code>, the answer is silently
+truncated. Recycle everything to a common length first.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="fu">lengths</span>(<span class="fu">list</span>(x, a, b)))</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">rep_len</span>(x, n); a <span class="ot">&lt;-</span> <span class="fu">rep_len</span>(a, n); b <span class="ot">&lt;-</span> <span class="fu">rep_len</span>(b, n)</span></code></pre></div>
 </div>
-<div id="zero-inflated-distributions" class="section level2">
-<h2>Zero-inflated distributions</h2>
-<p>Two utility functions handle the mixture in a tape-compatible
-way:</p>
-<ul>
-<li><code>log_zi(x, logdens, zeroprob)</code> — continuous ZI: point
-mass at 0, density for x &gt; 0.</li>
-<li><code>log_zi_discrete(x, logdens, zeroprob)</code> — discrete ZI:
-adds inflation mass on top of the PMF at 0.</li>
-</ul>
-<p>Typical usage:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>logdens <span class="ot">&lt;-</span> RTMB<span class="sc">::</span><span class="fu">dgamma</span>(x <span class="sc">+</span> .Machine<span class="sc">$</span>double.xmin, <span class="at">shape =</span> shape, <span class="at">scale =</span> scale, <span class="at">log =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>logdens <span class="ot">&lt;-</span> <span class="fu">log_zi</span>(x, logdens, zeroprob)</span></code></pre></div>
-<p>The <code>eps</code> offset prevents <code>log(0)</code> before
-<code>log_zi</code> has a chance to zero out the weight.</p>
+<div id="zero-modified-distributions" class="section level2">
+<h2>Zero-modified distributions</h2>
+<p><code>RTMBdist</code> ships four families built on a base
+distribution. The prefixes are <code>zi</code> (zero-inflated),
+<code>zt</code> (zero-truncated) and <code>h</code> (hurdle, also called
+zero-altered).</p>
+<p>Write for the probability of a zero under the <strong>base</strong>
+distribution and for the <code>zeroprob</code> parameter.</p>
+<table>
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Family</th>
+<th>At <code>x = 0</code></th>
+<th>At <code>x &gt; 0</code></th>
+<th>Helper</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>zero-inflated, discrete</td>
+<td></td>
+<td></td>
+<td><code>log_zi_discrete(x, logdens, zeroprob)</code></td>
+</tr>
+<tr class="even">
+<td>zero-inflated, continuous</td>
+<td></td>
+<td></td>
+<td><code>log_zi(x, logdens, zeroprob)</code></td>
+</tr>
+<tr class="odd">
+<td>zero-truncated</td>
+<td>0</td>
+<td></td>
+<td>write it out, see below</td>
+</tr>
+<tr class="even">
+<td>hurdle</td>
+<td></td>
+<td></td>
+<td><code>log_hurdle(x, logdens, p0, zeroprob)</code></td>
+</tr>
+</tbody>
+</table>
+<p>Zero-inflation and a hurdle only differ for discrete distributions.
+Inflation adds zeros on top of the ones the base already produces, so
+<code>zeroprob</code> is not the probability of a zero; a hurdle
+replaces them, so it is. For a continuous base the two are the same
+thing, because the continuous part puts no mass at zero. That is why
+<code>gamlss.dist</code> calls those zero-adjusted rather than
+zero-inflated, and why there is no <code>h</code> version of a
+continuous distribution here.</p>
+<p>Zero-truncated, using the Poisson as the example:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>dztfoo <span class="ot">&lt;-</span> <span class="cf">function</span>(x, theta, <span class="at">log =</span> <span class="cn">FALSE</span>) {</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="co"># ... guards and escapes as usual ...</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  logdens <span class="ot">&lt;-</span> <span class="fu">dfoo</span>(x, theta, <span class="at">log =</span> <span class="cn">TRUE</span>) <span class="sc">-</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>    <span class="fu">log1p</span>(<span class="sc">-</span>p0) <span class="sc">+</span>            <span class="co"># p0 = P(X = 0) under the base distribution</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>    <span class="fu">log</span>(<span class="fu">ispos_strict</span>(x))    <span class="co"># -Inf below the support, so the density is 0 there</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="cf">if</span> (log) <span class="fu">return</span>(logdens)</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">exp</span>(logdens))</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>}</span></code></pre></div>
+<p>Hurdle, which reuses the same <code>p0</code>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>dhfoo <span class="ot">&lt;-</span> <span class="cf">function</span>(x, theta, <span class="at">zeroprob =</span> <span class="fl">0.5</span>, <span class="at">log =</span> <span class="cn">FALSE</span>) {</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="co"># ... guards and escapes as usual ...</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  logdens <span class="ot">&lt;-</span> <span class="fu">log_hurdle</span>(x, <span class="fu">dfoo</span>(x, theta, <span class="at">log =</span> <span class="cn">TRUE</span>), p0, zeroprob)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="cf">if</span> (log) <span class="fu">return</span>(logdens)</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">exp</span>(logdens))</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>}</span></code></pre></div>
+<p><code>log_hurdle()</code> combines the two branches with
+<code>logspace_add()</code>, so either can be exactly zero,
+<code>zeroprob = 0</code> and <code>zeroprob = 1</code> included,
+without producing <code>NaN</code>. The cdf is
+<code>greater(q, -1) * (zeroprob + (1 - zeroprob) * pztfoo(q, theta))</code>.
+The RNG draws a uniform, keeps the zeros, and fills the rest from
+<code>rztfoo</code>.</p>
 </div>
 <div id="reparameterised-variants" class="section level2">
 <h2>Reparameterised variants</h2>
-<p>Transform parameters at the top and delegate to the base
-function:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>dfoo2 <span class="ot">&lt;-</span> <span class="cf">function</span>(x, mean, sd, <span class="at">log =</span> <span class="cn">FALSE</span>) {</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">ad_context</span>()) { ... }</span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">inherits</span>(x, <span class="st">&quot;simref&quot;</span>)) <span class="fu">return</span>(<span class="fu">dGenericSim</span>(<span class="st">&quot;dfoo2&quot;</span>, ...))</span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">inherits</span>(x, <span class="st">&quot;osa&quot;</span>))    <span class="fu">return</span>(<span class="fu">dGenericOSA</span>(<span class="st">&quot;dfoo2&quot;</span>, ...))</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a></span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  shape <span class="ot">&lt;-</span> mean <span class="sc">*</span> mean <span class="sc">/</span> (sd <span class="sc">*</span> sd)</span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  scale <span class="ot">&lt;-</span> sd <span class="sc">*</span> sd <span class="sc">/</span> mean</span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>  <span class="fu">dfoo</span>(x, <span class="at">shape =</span> shape, <span class="at">scale =</span> scale, <span class="at">log =</span> log)</span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>}</span></code></pre></div>
-<p>Do not skip the <code>simulation_check</code> and simref/osa escapes
-just because the base function also has them.</p>
-<hr />
+<p>Transform the parameters at the top and delegate. The <code>2</code>
+suffix means a reparameterisation, usually in terms of the mean.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>dfoo2 <span class="ot">&lt;-</span> <span class="cf">function</span>(x, mean, sd, <span class="at">log =</span> <span class="cn">FALSE</span>) {</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">ad_context</span>()) { ... }</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">inherits</span>(x, <span class="st">&quot;simref&quot;</span>)) <span class="fu">return</span>(<span class="fu">dGenericSim</span>(<span class="st">&quot;dfoo2&quot;</span>, ...))</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">inherits</span>(x, <span class="st">&quot;osa&quot;</span>))    <span class="fu">return</span>(<span class="fu">dGenericOSA</span>(<span class="st">&quot;dfoo2&quot;</span>, ...))</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  shape <span class="ot">&lt;-</span> mean <span class="sc">*</span> mean <span class="sc">/</span> (sd <span class="sc">*</span> sd)</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  scale <span class="ot">&lt;-</span> sd <span class="sc">*</span> sd <span class="sc">/</span> mean</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  <span class="fu">dfoo</span>(x, <span class="at">shape =</span> shape, <span class="at">scale =</span> scale, <span class="at">log =</span> log)</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>}</span></code></pre></div>
+<p>Keep the <code>simulation_check</code> and the simref/osa escapes
+even though the base function has them. The escapes need to report
+<code>dfoo2</code>, not <code>dfoo</code>.</p>
 </div>
-<div id="documentation" class="section level2">
-<h2>Documentation</h2>
-<p>Use the <code>@name</code> / <code>NULL</code> trick to attach the
-shared Roxygen block to a dummy object and give each function
-<code>@rdname</code>:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co">#&#39; Foo distribution</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&#39;</span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&#39; Density, distribution function, quantile function, and random generation</span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&#39; for the Foo distribution.</span></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&#39;</span></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&#39; @details</span></span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&#39; The Foo distribution with parameter \eqn{\theta &gt; 0} has density</span></span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&#39; \deqn{f(x;\,\theta) = \theta e^{-\theta x}, \quad x \ge 0.}</span></span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&#39;</span></span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&#39; @param x,q vector of quantiles</span></span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&#39; @param p vector of probabilities</span></span>
-<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&#39; @param n number of random values to return</span></span>
-<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&#39; @param theta positive rate parameter</span></span>
-<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&#39; @param log,log.p logical; if \code{TRUE}, probabilities/densities are</span></span>
-<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&#39;   returned as \eqn{\log(p)}.</span></span>
-<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&#39; @param lower.tail logical; if \code{TRUE} (default), probabilities are</span></span>
-<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&#39;   \eqn{P[X \le x]}, otherwise \eqn{P[X &gt; x]}.</span></span>
-<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&#39; @references \url{https://en.wikipedia.org/wiki/...}</span></span>
-<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&#39; @return \code{dfoo} gives the density, \code{pfoo} gives the distribution</span></span>
-<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&#39;   function, \code{qfoo} gives the quantile function, and \code{rfoo}</span></span>
-<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&#39;   generates random deviates.</span></span>
-<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&#39; @examples</span></span>
-<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&#39; x &lt;- rfoo(1, theta = 2)</span></span>
-<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a><span class="co">#&#39; d &lt;- dfoo(x, theta = 2)</span></span>
-<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a><span class="co">#&#39; p &lt;- pfoo(x, theta = 2)</span></span>
-<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a><span class="co">#&#39; q &lt;- qfoo(p, theta = 2)</span></span>
-<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a><span class="co">#&#39; @name foo</span></span>
-<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a><span class="cn">NULL</span></span>
-<span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a></span>
-<span id="cb7-30"><a href="#cb7-30" tabindex="-1"></a><span class="co">#&#39; @rdname foo</span></span>
-<span id="cb7-31"><a href="#cb7-31" tabindex="-1"></a><span class="co">#&#39; @export</span></span>
-<span id="cb7-32"><a href="#cb7-32" tabindex="-1"></a><span class="co">#&#39; @import RTMB</span></span>
-<span id="cb7-33"><a href="#cb7-33" tabindex="-1"></a>dfoo <span class="ot">&lt;-</span> <span class="cf">function</span>(x, theta, <span class="at">log =</span> <span class="cn">FALSE</span>) { ... }</span></code></pre></div>
-<p>Write the <code>\deqn{}</code> in clean mathematical form — not the
-numerically stable implementation. Use <code>@import RTMB</code> on
-every function that uses arithmetic or mathematical operations. Use
-<code>@importFrom stats r&lt;base&gt;</code> in the RNG for the base
-sampler.</p>
-<hr />
-</div>
-<div id="tests" class="section level2">
-<h2>Tests</h2>
-<p>Place tests in <code>tests/testthat/test-&lt;dist&gt;.R</code>. Use
-two parameter combinations and always include an AD gradient check.</p>
-<p><strong>Continuous distribution:</strong></p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">test_that</span>(<span class="st">&quot;foo passes standard distribution checks (theta=1)&quot;</span>, {</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="fu">check_continuous_dist</span>(dfoo, pfoo, qfoo,</span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>    <span class="at">xs =</span> <span class="fu">c</span>(<span class="fl">0.2</span>, <span class="fl">0.5</span>, <span class="dv">1</span>, <span class="dv">2</span>),</span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>    <span class="at">lower =</span> <span class="dv">0</span>, <span class="at">upper =</span> <span class="cn">Inf</span>,</span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>    <span class="at">theta =</span> <span class="dv">1</span>)</span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>})</span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="fu">test_that</span>(<span class="st">&quot;foo passes standard distribution checks (theta=3)&quot;</span>, {</span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>  <span class="fu">check_continuous_dist</span>(dfoo, pfoo, qfoo,</span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>    <span class="at">xs =</span> <span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.4</span>, <span class="fl">0.8</span>, <span class="fl">1.5</span>),</span>
-<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>    <span class="at">lower =</span> <span class="dv">0</span>, <span class="at">upper =</span> <span class="cn">Inf</span>,</span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>    <span class="at">theta =</span> <span class="dv">3</span>)</span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>})</span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a></span>
-<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="fu">test_that</span>(<span class="st">&quot;foo AD gradient has no NaN&quot;</span>, {</span>
-<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a>  <span class="fu">check_ad_gradient</span>(dfoo, rfoo, <span class="at">theta =</span> <span class="dv">1</span>)</span>
-<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a>})</span></code></pre></div>
-<p>Choose <code>xs</code> so that <code>pfoo(xs)</code> stays well away
-from 0 and 1 — the <code>q(p(x))</code> round-trip returns
-<code>Inf</code> or <code>-Inf</code> when the CDF saturates in double
-precision.</p>
-<p>Other helpers for different distribution types:</p>
+<div id="distributions-to-read" class="section level2">
+<h2>Distributions to read</h2>
+<p>The example above is deliberately simple. When you hit something it
+does not cover, the shortest route is usually to open a distribution
+that already solves the same problem.</p>
 <table>
 <colgroup>
 <col width="50%" />
@@ -686,40 +762,124 @@ precision.</p>
 </colgroup>
 <thead>
 <tr class="header">
-<th>Type</th>
-<th>Helper</th>
+<th>If you are writing</th>
+<th>Read</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>Continuous</td>
-<td><code>check_continuous_dist</code></td>
+<td>a plain continuous distribution, closed forms throughout</td>
+<td><code>R/gompertz.R</code>, <code>R/llogis.R</code></td>
 </tr>
 <tr class="even">
-<td>Continuous without quantile function</td>
-<td><code>check_continuous_dist(..., qfun = NULL)</code></td>
+<td>a discrete distribution</td>
+<td><code>R/ztpois.R</code>, <code>R/zipois.R</code></td>
 </tr>
 <tr class="odd">
-<td>Zero-inflated continuous</td>
-<td><code>check_zeroinfl_dist</code></td>
+<td>a reparameterisation of an existing one</td>
+<td><code>R/nbinom2.R</code>, <code>R/beta2.R</code></td>
 </tr>
 <tr class="even">
-<td>Mixed/inflated (ZI+OI etc.)</td>
-<td><code>check_inflated_dist</code></td>
+<td>zero-inflated, zero-truncated or hurdle</td>
+<td><code>R/zipois.R</code>, <code>R/ztpois.R</code>,
+<code>R/hpois.R</code></td>
 </tr>
 <tr class="odd">
-<td>Discrete</td>
-<td><code>check_discrete_dist</code></td>
+<td>something with an awkward support boundary</td>
+<td><code>R/pareto.R</code> (), <code>R/zibeta.R</code> (excluding
+)</td>
+</tr>
+<tr class="even">
+<td>a term that has to be clamped to stay finite</td>
+<td><code>R/kumar.R</code></td>
+</tr>
+<tr class="odd">
+<td>a quantile function that needs root finding</td>
+<td><code>R/exgauss.R</code></td>
+</tr>
+<tr class="even">
+<td>a density that needs branching on a parameter</td>
+<td><code>R/bccg.R</code>, <code>R/bcpe.R</code></td>
+</tr>
+<tr class="odd">
+<td>an AD version of a <code>stats</code> function</td>
+<td><code>R/ad-dispatch.R</code>, <code>R/geom-ad.R</code></td>
 </tr>
 </tbody>
 </table>
 </div>
-<div id="vignette-entry" class="section level2">
-<h2>Vignette entry</h2>
-<p>Add one bullet to <code>vignettes/distlist.Rmd</code> in the correct
-section (Continuous / Discrete / Multivariate) in alphabetical
-order:</p>
-<pre><code>* [`foo(theta)`](../reference/foo.html): Foo distribution parameterised by rate `theta`</code></pre>
+<div id="before-you-are-done" class="section level2">
+<h2>Before you are done</h2>
+<ul>
+<li><code>devtools::document()</code>, so <code>NAMESPACE</code> and the
+<code>man/</code> pages are regenerated.</li>
+<li><code>devtools::test()</code> for the new file, then the whole
+suite. A new distribution that breaks an old test usually means a shared
+helper changed behaviour.</li>
+<li><code>devtools::check()</code>. Watch in particular for
+<code>checking Rd cross-references</code>, which catches a
+<code>@seealso</code> pointing at a topic that does not exist.</li>
+<li>Check the <code>NAMESPACE</code> diff. If it contains anything
+beyond your own exports, something imported more than you meant it
+to.</li>
+</ul>
+</div>
+<div id="when-the-cdf-has-no-closed-form" class="section level2">
+<h2>When the cdf has no closed form</h2>
+<p>A distribution function is needed for OSA residuals, so avoid
+shipping without one. Two internal helpers build it from the
+density.</p>
+<p><code>numerical_cdf(dfun, q, pars, centre, scale, lower, upper, ...)</code>
+integrates a continuous density with <code>RTMB</code>’s AD-compatible
+<code>integrate()</code>. Call it only in AD context and keep a faster
+non-AD cdf, e.g. from another package, for ordinary use, as
+<code>pskewnorm</code> does. If that cdf is inaccurate in the tails,
+pass its values through <code>refine_tails()</code>, which integrates
+only where the requested tail is small. Pass <code>centre</code> close
+to the mode and <code>scale</code> of the order of the spread; the
+comments in <code>R/numerical_cdf.R</code> explain why.</p>
+<p><code>discrete_cdf(dfun, q, pars, upper, ...)</code> sums a
+probability mass function over . It is AD-compatible in the parameters,
+while <code>q</code> must be numeric, which is how <code>RTMB</code>’s
+CDF-based OSA residuals use it. Pass <code>upper</code>
+(e.g. <code>size</code>) for a bounded support, so that the cdf is
+exactly 1 at the upper end. Otherwise rounding can push it above 1, and
+the OSA residuals become <code>NaN</code>. <code>pbetabinom</code> is a
+short example.</p>
+<p>Both take the parameters as a named list rather than
+<code>...</code>, so that a parameter called <code>df</code> cannot
+partially match the argument <code>dfun</code>.</p>
+</div>
+<div id="when-rtmb-has-no-ad-version" class="section level2">
+<h2>When <code>RTMB</code> has no AD version</h2>
+<p><code>RTMB</code> covers most of <code>stats</code> but not all of
+it. <code>dgeom</code>, <code>pt</code> and <code>plnorm</code> have no
+AD method. Exporting your own version of one would mask the
+<code>stats</code> function for everyone who loads <code>RTMBdist</code>
+and break their ordinary calls.</p>
+<p><code>R/ad-dispatch.R</code> avoids that. Write the AD implementation
+as <code>&lt;fn&gt;.ad</code>, export it, and register an unexported S4
+generic:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">setGeneric</span>(<span class="st">&quot;pt&quot;</span>, <span class="at">signature =</span> <span class="fu">c</span>(<span class="st">&quot;q&quot;</span>, <span class="st">&quot;df&quot;</span>))</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="fu">setMethod</span>(<span class="st">&quot;pt&quot;</span>, <span class="fu">signature</span>(<span class="at">q =</span> <span class="st">&quot;num&quot;</span>, <span class="at">df =</span> <span class="st">&quot;num.&quot;</span>), stats<span class="sc">::</span>pt)          <span class="co"># plain numbers</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="fu">setMethod</span>(<span class="st">&quot;pt&quot;</span>, <span class="fu">signature</span>(<span class="at">q =</span> <span class="st">&quot;ad&quot;</span>,  <span class="at">df =</span> <span class="st">&quot;ad.&quot;</span> ),                     <span class="co"># any AD variable</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>          <span class="cf">function</span>(q, df, ncp, <span class="at">lower.tail =</span> <span class="cn">TRUE</span>, <span class="at">log.p =</span> <span class="cn">FALSE</span>) { ... <span class="fu">pt.ad</span>(q, df) ... })</span></code></pre></div>
+<p><code>num</code> and <code>ad</code> are <code>RTMB</code>’s dispatch
+classes: <code>ad</code> covers AD variables <em>and</em> numbers,
+<code>num</code> covers only numbers, so the more specific
+<code>num</code> method wins whenever nothing is being taped. A trailing
+dot (<code>num.</code>, <code>ad.</code>) also allows the argument to be
+missing.</p>
+<p>Since the generic is not exported, a user’s <code>stats::pt()</code>
+is untouched, while inside the package a bare <code>pt()</code>
+dispatches correctly. It costs one S4 dispatch, under a microsecond,
+paid once when the tape is built rather than on every gradient
+evaluation.</p>
+<p>One import to avoid: never write <code>@importFrom stats pnorm</code>
+to get hold of a <code>pnorm</code>. That replaces <code>RTMB</code>’s
+AD-aware <code>pnorm</code> across the entire package and silently
+breaks taping in every file. Call <code>stats::pnorm()</code> at the
+point of use instead.</p>
 </div>
 
 

@@ -1,7 +1,14 @@
-# Vecotorizing sn package functions
+# Vectorising sn package functions
 psn <- Vectorize(sn::psn)
 qsn <- Vectorize(sn::qsn)
-rsn <- Vectorize(sn::rsn)
+
+# n standard skew normal draws, vectorised over alpha, via the representation
+# delta * |U0| + sqrt(1 - delta^2) * U1 with U0, U1 iid N(0, 1)
+rsn_std <- function(n, alpha) {
+  alpha <- rep_len(alpha, n)
+  delta <- alpha / sqrt(1 + alpha^2)
+  delta * abs(stats::rnorm(n)) + sqrt(1 - delta^2) * stats::rnorm(n)
+}
 
 #' Skew normal distribution
 #'
@@ -10,6 +17,7 @@ rsn <- Vectorize(sn::rsn)
 #'
 #' @details
 #' This implementation of \code{dskewnorm} allows for automatic differentiation with \code{RTMB} while the other functions are imported from the \code{sn} package.
+#' When called during AD taping, \code{pskewnorm} instead integrates the density numerically with the AD-compatible \code{\link[RTMB:ADintegrate]{integrate}} of \code{RTMB}, which makes it AD-compatible as well.
 #' See \code{sn::\link[sn]{dsn}} for more details.
 #'
 #' \deqn{f(x;\,\xi,\omega,\alpha) = \frac{2}{\omega}\,\phi\!\left(\frac{x-\xi}{\omega}\right)\Phi\!\left(\alpha\frac{x-\xi}{\omega}\right),}
@@ -56,14 +64,13 @@ dskewnorm <- function(x, xi = 0, omega = 1, alpha = 0, log = FALSE) {
     return(dGenericSim("dskewnorm", x=x, xi=xi, omega=omega, alpha=alpha, log=log))
   }
   if(inherits(x, "osa")) {
-    # return(dGenericOSA("dskewnorm", x=x, xi=xi, omega=omega, alpha=alpha, log=log))
-    stop("Currently, skew normal does not support OSA residuals.")
+    return(dGenericOSA("dskewnorm", x=x, xi=xi, omega=omega, alpha=alpha, log=log))
   }
 
   z = (x - xi) / omega # standardised observation
 
   log_normal_density <- RTMB::dnorm(z, log = TRUE)
-  log_skew_component <- log(2) - log(omega) + log(1e-300 + RTMB::pnorm(alpha * z))
+  log_skew_component <- log(2) - log(omega) + RTMB::pnorm(alpha * z, log.p = TRUE)
 
   log_density = log_normal_density + log_skew_component
 
@@ -79,15 +86,24 @@ dskewnorm <- function(x, xi = 0, omega = 1, alpha = 0, log = FALSE) {
 #' @importFrom sn psn
 pskewnorm <- function(q, xi = 0, omega = 1, alpha = 0, lower.tail = TRUE, log.p = FALSE) {
 
+  # centre for numerical integration is the mean, written to allow alpha = +/- Inf
+  a <- value_of(alpha)
+  centre <- value_of(xi) + value_of(omega) * sqrt(2 / pi) * sign(a) / sqrt(1 + 1 / a^2)
+  pars <- list(xi = xi, omega = omega, alpha = alpha)
+
   if(!ad_context()) {
     # ensure omega > 0
     if (any(omega <= 0)) stop("omega must be strictly positive.")
+  } else {
+    # sn::psn is not AD-compatible, hence integrate the density numerically
+    return(numerical_cdf(dskewnorm, q, pars, centre = centre, scale = omega,
+                         lower.tail = lower.tail, log.p = log.p))
   }
 
   p <- psn(x = q, xi = xi, omega = omega, alpha = alpha)
-  if (!lower.tail) p <- 1 - p
-  if (log.p) p <- log(p)
-  p
+  # sn is exact for alpha = +/- Inf, where the density is zero on one side
+  refine_tails(p, dskewnorm, q, pars, centre = centre, scale = omega,
+               lower.tail = lower.tail, log.p = log.p, use = is.finite(alpha))
 }
 
 #' @rdname skewnorm
@@ -107,20 +123,9 @@ qskewnorm <- function(p, xi = 0, omega = 1, alpha = 0, lower.tail = TRUE, log.p 
 
 #' @rdname skewnorm
 #' @export
-#' @importFrom sn rsn
 rskewnorm <- function(n, xi = 0, omega = 1, alpha = 0) {
   if (any(omega <= 0)) stop("omega must be strictly positive.")
 
-  # elementwise generation
-  if (length(xi) == 1L && length(omega) == 1L && length(alpha) == 1L) {
-    return(sn::rsn(n, xi, omega, alpha))
-  }
-
-  len <- max(length(xi), length(omega), length(alpha), n)
-  xi <- rep_len(xi, len)
-  omega <- rep_len(omega, len)
-  alpha <- rep_len(alpha, len)
-
-  vapply(seq_len(len), function(i)
-    sn::rsn(1, xi[i], omega[i], alpha[i]), numeric(1))
+  if (length(n) > 1L) n <- length(n)
+  rep_len(xi, n) + rep_len(omega, n) * rsn_std(n, alpha)
 }

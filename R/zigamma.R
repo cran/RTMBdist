@@ -9,6 +9,12 @@
 #' \deqn{f(x;\,\alpha,s,p_0) = p_0\,\mathbf{1}[x=0] + (1-p_0)\,f_{\mathrm{Gamma}}(x;\,\alpha,s)\,\mathbf{1}[x>0],}
 #' where \eqn{p_0} is \code{zeroprob}.
 #'
+#' Because the continuous part places no mass at zero, \code{zeroprob} is exactly
+#' \eqn{P(X = 0)}, and zero-inflation coincides with a hurdle model here. The two
+#' constructions only differ for discrete distributions, where the base distribution
+#' can generate zeros of its own. GAMLSS therefore calls distributions of this type
+#' zero-adjusted rather than zero-inflated, as in its \code{ZAGA} family.
+#'
 #' @param x,q vector of quantiles
 #' @param n number of random values to return
 #' @param shape positive shape parameter
@@ -76,7 +82,7 @@ pzigamma <- function(q, shape, scale, zeroprob = 0, lower.tail = TRUE, log.p = F
   # cdf <- cdf * s2 # set negative values to 0
 
   p <- iszero(q) * zeroprob +
-    ispos_strict(q) * (zeroprob + (1 - zeroprob) * pgamma(q, shape, scale))
+    ispos_strict(q) * (zeroprob + (1 - zeroprob) * pgamma_ad(q / scale, shape))
 
   if(!lower.tail) p <- 1 - p
   if(log.p) p <- log(p)
@@ -95,7 +101,7 @@ rzigamma <- function(n, shape, scale, zeroprob = 0) {
   u <- runif(n)
   res <- rep(0, n)
   is_zero <- u < zeroprob
-  res[!is_zero] <- rgamma(sum(!is_zero), shape = shape, scale = scale)
+  res[!is_zero] <- rgamma(sum(!is_zero), shape = rep_len(shape, n)[!is_zero], scale = rep_len(scale, n)[!is_zero])
 
   return(res)
 }

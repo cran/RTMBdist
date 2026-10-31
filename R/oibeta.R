@@ -76,7 +76,7 @@ poibeta <- function(q, shape1, shape2, oneprob = 0, lower.tail = TRUE, log.p = F
     # if (any(q <= 0 | q > 1)) stop("q must be in the interval (0, 1].")
   }
 
-  p <- ((1 - oneprob) * RTMB::pbeta(q, shape1, shape2)) +
+  p <- ((1 - oneprob) * beta_ad(pbeta, q, shape1, shape2)) +
     ispos_strict(q-1) * oneprob
 
   if(!lower.tail) p <- 1 - p
@@ -98,7 +98,7 @@ roibeta <- function(n, shape1, shape2, oneprob = 0) {
   u <- runif(n)
   res <- rep(1, n)
   is_one <- u < oneprob
-  res[!is_one] <- rbeta(sum(!is_one), shape1, shape2)
+  res[!is_one] <- rbeta(sum(!is_one), rep_len(shape1, n)[!is_one], rep_len(shape2, n)[!is_one])
 
   return(res)
 }

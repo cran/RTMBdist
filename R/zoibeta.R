@@ -101,7 +101,7 @@ pzoibeta <- function(q, shape1, shape2, zeroprob = 0, oneprob = 0, lower.tail = 
   }
 
   p <- iszero(q) * zeroprob +
-    (1-iszero(q)) * (zeroprob + (1 - zeroprob - oneprob) * RTMB::pbeta(q, shape1, shape2)) +
+    ispos_strict(q) * (zeroprob + (1 - zeroprob - oneprob) * beta_ad(pbeta, q, shape1, shape2)) +
     (1-isneg(q-1)) * oneprob
 
   if(!lower.tail) p <- 1 - p
@@ -131,7 +131,7 @@ rzoibeta <- function(n, shape1, shape2, zeroprob = 0, oneprob = 0) {
   is_one  <- u >= zeroprob & u < zeroprob + oneprob
   is_cont <- !is_zero & !is_one
   res[is_one]  <- 1
-  res[is_cont] <- rbeta(sum(is_cont), shape1, shape2)
+  res[is_cont] <- rbeta(sum(is_cont), rep_len(shape1, n)[is_cont], rep_len(shape2, n)[is_cont])
 
   return(res)
 }

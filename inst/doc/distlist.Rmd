@@ -28,21 +28,43 @@ Note that some famous non-standard distributions (Tweedie, SHASHo, COM-Pois, Cau
 
 * [`beta2(mu, phi)`](../reference/beta2.html): Beta distribution reparameterised by mean `mu` and precision `phi`
 
+* [`bisa(scale, shape)`](../reference/bisa.html): Birnbaum-Saunders (fatigue life) distribution parameterised by scale `scale` (equal to the median) and shape `shape`
+
+* [`card(mu, rho)`](../reference/card.html): Cardioid distribution parameterised by mean direction `mu` and concentration `rho`
+
 * [`exgauss(mu, sigma, lambda)`](../reference/exgauss.html): Exponentially modified Gaussian distribution parameterised by location `mu`, scale `sigma`, and rate `lambda`
 
 * [`foldnorm(mu, sigma)`](../reference/foldnorm.html): Folded normal distribution parameterised by location `mu` and scale `sigma`
 
+* [`frechet(mu, sigma, alpha)`](../reference/frechet.html): Frechet distribution parameterised by location `mu`, scale `sigma`, and shape `alpha`
+
 * [`gamma2(mean, sd)`](../reference/gamma2.html): Gamma distribution reparameterised by mean and standard deviation
 
+* [`gb2(scale, shape1, shape2, shape3)`](../reference/gb2.html): Generalised beta distribution of the second kind parameterised by scale `scale` and shapes `shape1`, `shape2` and `shape3`
+
+* [`dagum(scale, shape1, shape2)`](../reference/gb2.html): Dagum distribution, the GB2 with `shape3 = 1`
+
+* [`sinmad(scale, shape1, shape3)`](../reference/gb2.html): Singh-Maddala (Burr XII) distribution, the GB2 with `shape2 = 1`
+
+* [`lomax(scale, shape3)`](../reference/gb2.html): Lomax (Pareto II) distribution, the GB2 with `shape1 = shape2 = 1`
+
 * [`gengamma(mu, sigma, nu)`](../reference/gengamma.html): Generalised gamma distribution parameterised by location `mu`, scale `sigma`, and skewness `nu`
+
+* [`gev(mu, sigma, xi)`](../reference/gev.html): Generalised extreme value distribution parameterised by location `mu`, scale `sigma`, and shape `xi`
+
+* [`gpd(mu, sigma, xi)`](../reference/gpd.html): Generalised Pareto distribution parameterised by threshold `mu`, scale `sigma`, and shape `xi`
 
 * [`gompertz(eta, b)`](../reference/gompertz.html): Gompertz distribution parameterised by shape `eta` and rate `b`
 
 * [`gumbel(location, scale)`](../reference/gumbel.html): Gumbel distribution parameterised by `location` and `scale`
 
+* [`halfcauchy(sigma)`](../reference/halfcauchy.html): Half-Cauchy distribution parameterised by scale `sigma`, a standard weakly informative prior for hierarchical standard deviations
+
+* [`halft(df, sigma)`](../reference/halft.html): Half-t distribution parameterised by degrees of freedom `df` and scale `sigma`
+
 * [`invchisq(df, scale)`](../reference/invchisq.html): Inverse Chi-squared distribution parameterised by degrees of freedom `df` and optional `scale`
 
-* [`invgamma(shape, rate, scale)`](../reference/invgamma.html): Inverse gamma distribution parameterised by `shape`, `rate`, and `scale` of the corresponding gamma distribution
+* [`invgamma(shape, rate, scale)`](../reference/invgamma.html): Inverse gamma distribution parameterised by `shape` and either `rate` or `scale` of the corresponding gamma distribution
 
 * [`invgauss(mean, shape)`](../reference/invgauss.html): Inverse Gaussian distribution parameterised by mean and shape
 
@@ -88,6 +110,8 @@ Note that some famous non-standard distributions (Tweedie, SHASHo, COM-Pois, Cau
 
 * [`wrpcauchy(mu, rho)`](../reference/wrpcauchy.html): Wrapped Cauchy distribution parameterised by mean direction `mu` and concentration `rho`
 
+* [`wrpnorm(mu, sigma)`](../reference/wrpnorm.html): Wrapped normal distribution parameterised by mean direction `mu` and standard deviation `sigma` of the unwrapped normal
+
 * [`zibeta(shape1, shape2, zeroprob)`](../reference/zibeta.html): Zero-inflated beta distribution parameterised by shape parameters `shape1`, `shape2` and zero-probability `zeroprob`
 
 * [`zibeta2(mu, phi, zeroprob)`](../reference/zibeta2.html): Zero-inflated beta distribution reparameterised by mean `mu`, precision `phi`, and zero-probability `zeroprob`
@@ -115,11 +139,23 @@ Note that some famous non-standard distributions (Tweedie, SHASHo, COM-Pois, Cau
 
 * [`betabinom(size, shape1, shape2)`](../reference/betabinom.html): Beta-binomial distribution parameterised by size `size`, shape parameters `shape1` and `shape2`
 
+* [`bnbinom(size, shape1, shape2)`](../reference/bnbinom.html): Beta-negative binomial distribution parameterised by `size` and the shape parameters `shape1` and `shape2` of the beta prior
+
+* [`bnbinom2(mu, sigma, nu)`](../reference/bnbinom2.html): Beta-negative binomial distribution reparameterised by mean `mu` and dispersion parameters `sigma` and `nu`
+
+* [`waring(mu, sigma)`](../reference/waring.html): Waring (beta-geometric) distribution parameterised by mean `mu` and dispersion `sigma`
+
+* [`yules(shape)`](../reference/yules.html): Yule-Simon distribution parameterised by `shape`, supported on the positive integers
+
 * [`combinom(size, prob, nu)`](../reference/combinom.html): Conway-Maxwell-binomial distribution parameterised by size `size`, success probability `prob` and dispersion `nu`
 
 * [`genpois(lambda, phi)`](../reference/genpois.html): Generalised Poisson distribution parameterised by mean `lambda` and dispersion `phi`
 
 * [`nbinom2(mu, size)`](../reference/nbinom2.html): Negative binomial distribution reparameterised by mean `mu` and size `size`
+
+* [`pig(mu, sigma)`](../reference/pig.html): Poisson-inverse Gaussian distribution parameterised by mean `mu` and dispersion `sigma`
+
+* [`sichel(mu, sigma, nu)`](../reference/sichel.html): Sichel distribution parameterised by mean `mu`, dispersion `sigma` and shape `nu`
 
 * [`skellam(mu1, mu2)`](../reference/skellam.html): Skellam distribution parameterised by Poisson means `mu1` and `mu2`
 
@@ -129,7 +165,29 @@ Note that some famous non-standard distributions (Tweedie, SHASHo, COM-Pois, Cau
 
 * [`zinbinom2(mu, size, zeroprob)`](../reference/zinbinom2.html): Zero-inflated negative binomial distribution reparameterised by mean `mu`, size `size` and zero-probability `zeroprob`
 
+* [`hbetabinom(size, shape1, shape2, zeroprob)`](../reference/hbetabinom.html): Hurdle (zero-altered) beta-binomial distribution
+
+* [`hbinom(size, prob, zeroprob)`](../reference/hbinom.html): Hurdle (zero-altered) binomial distribution parameterised by `size`, `prob` and the probability of a zero `zeroprob`
+
+* [`hnbinom(size, prob, zeroprob)`](../reference/hnbinom.html): Hurdle (zero-altered) negative binomial distribution parameterised by `size`, `prob` and the probability of a zero `zeroprob`
+
+* [`hnbinom2(mu, size, zeroprob)`](../reference/hnbinom2.html): Hurdle (zero-altered) negative binomial distribution reparameterised by the untruncated mean `mu`, `size` and the probability of a zero `zeroprob`
+
+* [`hgeom(prob, zeroprob)`](../reference/hgeom.html): Hurdle (zero-altered) geometric distribution
+
+* [`hpois(lambda, zeroprob)`](../reference/hpois.html): Hurdle (zero-altered) Poisson distribution parameterised by the Poisson mean `lambda` and the probability of a zero `zeroprob`
+
+* [`zibetabinom(size, shape1, shape2, zeroprob)`](../reference/zibetabinom.html): Zero-inflated beta-binomial distribution
+
+* [`geom.ad(prob)`](../reference/geom.ad.html): AD-compatible geometric density and distribution function (`dgeom.ad()`, `pgeom.ad()`); `stats`' own `dgeom()`/`pgeom()` are left untouched
+
+* [`zigeom(prob, zeroprob)`](../reference/zigeom.html): Zero-inflated geometric distribution
+
 * [`zipois(lambda, zeroprob)`](../reference/zipois.html): Zero-inflated Poisson distribution parameterised by rate `lambda` and zero-probability `zeroprob`
+
+* [`ztbetabinom(size, shape1, shape2)`](../reference/ztbetabinom.html): Zero-truncated beta-binomial distribution
+
+* [`ztgeom(prob)`](../reference/ztgeom.html): Zero-truncated geometric distribution
 
 * [`ztbinom(size, prob)`](../reference/ztbinom.html): Zero-truncated binomial distribution parameterised by size `size` and success probability `prob`
 
@@ -163,6 +221,11 @@ Bivariate copulas can be implemented in a modular way using the [`dcopula`](../r
 * [`cclayton(theta)`](../reference/cclayton.html) (Clayton copula)
 * [`cgumbel(theta)`](../reference/cgumbel.html) (Gumbel copula)
 * [`cfrank(theta)`](../reference/cfrank.html) (Frank copula)
+
+For a circular and a linear margin, such as turning angles and step lengths, there are two circular-linear copula constructors. The circular margin has to be the first one in `dcopula`.
+
+* [`cjw(g, ...)`](../reference/cjw.html) (Johnson-Wehrly copula with circular binding density `g`, e.g. [`dvm`](../reference/vm.html), [`dwrpcauchy`](../reference/wrpcauchy.html) or [`dwrpnorm`](../reference/wrpnorm.html))
+* [`cfold(copula)`](../reference/cfold.html) (folds one of the copulas above into a circular-linear copula that is symmetric in the sign of the angle)
 
 For bivariate copulas with *discrete* margins, use the [`ddcopula`](../reference/ddcopula.html) function instead. In this case, instead of copula *densities*, copula *CDFs* are needed. The available constructors for this are:
 

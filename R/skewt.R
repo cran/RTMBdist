@@ -6,10 +6,8 @@
 #' @details
 #' This corresponds to the skew t type 2 distribution in GAMLSS (\code{ST2}), see pp. 411-412 of Rigby et al. (2019) and the version implemented in the \code{sn} package.
 #' This implementation of \code{dskewt} allows for automatic differentiation with \code{RTMB} while the other functions are imported from the \code{sn} package.
+#' When called during AD taping, \code{pskewt} instead integrates the density numerically with the AD-compatible \code{\link[RTMB:ADintegrate]{integrate}} of \code{RTMB}, which makes it AD-compatible as well. The \code{method} argument is then ignored.
 #' See \code{sn::\link[sn]{dst}} for more details.
-#'
-#' \strong{Caution:} In a numerial optimisation, the \code{skew} parameter should NEVER be initialised with exactly zero.
-#' This will cause the initial and all subsequent derivatives to be exactly zero and hence the parameter will remain at its initial value.
 #'
 #' \deqn{f(x;\,\mu,\sigma,\lambda,\nu) = \frac{2}{\sigma}\, f_t\!\left(\frac{x-\mu}{\sigma};\,\nu\right) F_t\!\left(\lambda\sqrt{\frac{\nu+1}{\nu + z^2}}\cdot z;\,\nu+1\right),}
 #' where \eqn{z=(x-\mu)/\sigma}, \eqn{f_t(\cdot;\nu)} is the Student-\eqn{t} PDF, and \eqn{F_t(\cdot;\nu+1)} is its CDF.
@@ -56,8 +54,7 @@ dskewt <- function(x, mu = 0, sigma = 1, skew = 0, df = 1e2, log = FALSE) {
     return(dGenericSim("dskewt", x=x, mu=mu, sigma=sigma, skew=skew, df=df, log=log))
   }
   if(inherits(x, "osa")) {
-    # return(dGenericOSA("dskewt", x=x, mu=mu, sigma=sigma, skew=skew, df=df, log=log))
-    stop("Currently, skew t does not support OSA residuals.")
+    return(dGenericOSA("dskewt", x=x, mu=mu, sigma=sigma, skew=skew, df=df, log=log))
   }
 
   z <- (x - mu) / sigma
@@ -85,10 +82,25 @@ pskewt <- function(q, mu = 0, sigma = 1, skew = 0, df = 1e2, method = 0,
   # if (sigma <= 0) stop("sigma must be strictly positive.")
   # if (df <= 0) stop("df must be strictly positive.")
 
-  p <- pst(q, xi=mu, omega=sigma, alpha=skew, nu=df, method=method)
-  if (!lower.tail) p <- 1 - p
-  if (log.p) p <- log(p)
-  p
+  # centre for numerical integration is the mean if it exists (df > 1) and mu otherwise,
+  # written to allow skew = +/- Inf
+  a <- value_of(skew)
+  nu <- value_of(df)
+  b_nu <- ifelse(nu > 1, exp(0.5 * log(nu / pi) + lgamma((nu - 1) / 2) - lgamma(nu / 2)), 0)
+  centre <- value_of(mu) + value_of(sigma) * sign(a) / sqrt(1 + 1 / a^2) * b_nu
+  pars <- list(mu = mu, sigma = sigma, skew = skew, df = df)
+
+  if (ad_context()) {
+    # sn::pst is not AD-compatible, hence integrate the density numerically
+    return(numerical_cdf(dskewt, q, pars, centre = centre, scale = sigma,
+                         lower.tail = lower.tail, log.p = log.p))
+  }
+
+  p <- st_by_shape(pst, q, mu, sigma, skew, df, standardise = TRUE, method = method)
+  # sn is exact for skew = +/- Inf, and dskewt is NaN for df = Inf, so sn is kept there
+  refine_tails(p, dskewt, q, pars, centre = centre, scale = sigma,
+               lower.tail = lower.tail, log.p = log.p,
+               use = rep_len(is.finite(skew), length(p)) & rep_len(is.finite(df), length(p)))
 }
 
 #' @rdname skewt
@@ -104,16 +116,49 @@ qskewt <- function(p, mu = 0, sigma = 1, skew = 0, df = 1e2, tol = 1e-8, method 
   if (any(df <= 0)) stop("df must be strictly positive.")
   if (log.p) p <- exp(p)
   if (!lower.tail) p <- 1 - p
-  qst(p, xi=mu, omega=sigma, alpha=skew, nu=df, tol=tol, method=method)
+  st_by_shape(qst, p, mu, sigma, skew, df, standardise = FALSE, tol = tol, method = method)
+}
+
+# sn::pst and sn::qst only take a single alpha and nu, so call f once for each
+# distinct (skew, df) pair on the standard scale, which keeps sn's vectorisation
+# over x. standardise = TRUE maps x to the standard scale (CDF), FALSE maps the
+# result back from it (quantiles)
+st_by_shape <- function(f, x, mu, sigma, skew, df, standardise, ...) {
+  n <- max(length(x), length(mu), length(sigma), length(skew), length(df))
+  if (min(length(x), length(mu), length(sigma), length(skew), length(df)) == 0L) {
+    return(numeric(0))
+  }
+  x <- rep_len(x, n)
+  mu <- rep_len(mu, n)
+  sigma <- rep_len(sigma, n)
+  skew <- rep_len(skew, n)
+  df <- rep_len(df, n)
+  if (standardise) x <- (x - mu) / sigma
+
+  # %a is exact, so parameter values are never merged by rounding
+  shape <- paste(sprintf("%a", skew), sprintf("%a", df))
+  out <- numeric(n)
+  for (i in split(seq_len(n), shape)) {
+    out[i] <- f(x[i], 0, 1, skew[i[1]], df[i[1]], ...)
+  }
+  out[which(sigma <= 0)] <- NaN # as sn does for omega <= 0
+  if (standardise) out else mu + sigma * out
 }
 
 #' @rdname skewt
 #' @export
-#' @importFrom sn rst
 rskewt <- function(n, mu = 0, sigma = 1, skew = 0, df = 1e2) {
   # ensure sigma, df > 0
   if (any(sigma <= 0)) stop("sigma must be strictly positive.")
   if (any(df <= 0)) stop("df must be strictly positive.")
 
-  as.numeric(rst(n, xi=mu, omega=sigma, alpha=skew, nu=df))
+  if (length(n) > 1L) n <- length(n)
+  df <- rep_len(df, n)
+
+  # skew normal draw divided by sqrt(chisq(df) / df), which is 1 for df = Inf
+  v <- rep(1, n)
+  fin <- is.finite(df)
+  v[fin] <- stats::rchisq(sum(fin), df[fin]) / df[fin]
+
+  rep_len(mu, n) + rep_len(sigma, n) * rsn_std(n, skew) / sqrt(v)
 }
