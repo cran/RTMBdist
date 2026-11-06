@@ -1,6 +1,6 @@
-67e0c0e3efcd1a0cec37a27e29d42672 *DESCRIPTION
+ba069dbc061278ae708f615d70093c05 *DESCRIPTION
 593739d9ff76001b2dcc8b72a6789c68 *NAMESPACE
-d9934bdeac86e0fd830f1bd0a4c878b1 *NEWS.md
+6d727bf14c1fd00cc88cc6de48533917 *NEWS.md
 5c96ee3fc32bc8bf65a8012a55cd5a00 *R/aaa_utils.R
 750d8607b8a9acd0e9ac55dabd5de3b8 *R/ad-dispatch.R
 212a9834eaed1684d53bb2441a04dd2a *R/atomic.R
@@ -51,7 +51,7 @@ ddbb2cb6e9c0a284b2711ab1bad17f41 *R/invgamma.R
 03286525fc8fa26213598434e5599043 *R/laplace.R
 89078637be4bc653108f2629406ef843 *R/laplace_check.R
 516e88ebec15b46f6bcd972d823acbda *R/llogis.R
-4c1813af96c838824b8872dd1c2b0881 *R/mcreport.R
+0e50e6ae8031afb19920c746e5a76389 *R/mcreport.R
 10bf296f9f1a8d776a5e327df0def06c *R/mvt.R
 25c8a7170e053b3db50989a0a7655d0b *R/nbinom2.R
 822368f7a58888ab6b571b217e3b493b *R/numerical_cdf.R
@@ -106,7 +106,7 @@ adf3b6ba7f98038fcd15bfe418ac73d7 *R/zipois.R
 515a54faee160f0bdb8a281409d622fb *build/vignette.rds
 fb61a2ef2696c0a3905d64fb74544aa3 *inst/doc/Examples.R
 ec2eaa1a61988570f585064af11fedeb *inst/doc/Examples.Rmd
-1e75e5169bbb95dba1798d0a40ea3c57 *inst/doc/Examples.html
+5c767fd87ce61a5e602d9486e8baaf8c *inst/doc/Examples.html
 5e270ae6034b339c2a13d20a5f7d2dec *inst/doc/adding-a-distribution.R
 faf5e76b001cf4cce8fb4299e0e17dd8 *inst/doc/adding-a-distribution.Rmd
 c88746b4bb563d9bee929d4b7abd654c *inst/doc/adding-a-distribution.html
@@ -176,7 +176,7 @@ aed8745437a67babfd9dc2fd8a70ae43 *man/jsu.Rd
 88f9480f2a527943922953e507d2c1a5 *man/laplace.Rd
 69ea6691c6fbc21a65765292ccc2a94f *man/laplace_check.Rd
 03db4a9094d42bd285da7ca5c6b927b4 *man/llogis.Rd
-1314c9d0be62b92bb7819a091333dc32 *man/mcreport.Rd
+41788782e2daf9550d3b681101de0207 *man/mcreport.Rd
 da386c08b97fdbfb45f21f46e463ede6 *man/mvt.Rd
 b697b03a78529ab854b1d7540ee6162f *man/nbinom2.Rd
 4b415aa9d4085ac4ce87a8cecc4f9242 *man/oibeta.Rd
@@ -273,6 +273,7 @@ b29e3f412cca4f1c1e1395ad09576670 *tests/testthat/test-jsu.R
 e9c4cf65fdaf14eb4c9dbd6a72bf99d4 *tests/testthat/test-kumar.R
 87a6f960b7a18cebd4c091f60a603a1f *tests/testthat/test-laplace.R
 e3ae644e3924b759ce8255b89d481360 *tests/testthat/test-llogis.R
+87ae75f8bd50a07b86d7a1ed9168cb7f *tests/testthat/test-mcreport.R
 860b2bfd57c6c50326dc9eee92660cd6 *tests/testthat/test-mvt.R
 ae7428b3fe090cf88814672afd172a75 *tests/testthat/test-nbinom2.R
 c646392e265951f9ac77aeffbb73a9f5 *tests/testthat/test-oibeta.R
